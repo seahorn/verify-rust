@@ -24,7 +24,7 @@
 //! ### `write`
 //!
 //! When this feature is enabled, `SmallVec<[u8; _]>` implements the `std::io::Write` trait.
-//! This feature is not compatible with `#![no_std]` programs.
+//! This feature is not compatible with `#![cfg_attr(not(kani), no_std)]` programs.
 //!
 //! ### `union`
 //!
@@ -76,7 +76,7 @@
 //!
 //! Tracking issue: [rust-lang/rust#34761](https://github.com/rust-lang/rust/issues/34761)
 
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
@@ -94,7 +94,7 @@ pub extern crate alloc;
 #[cfg(any(test, feature = "write"))]
 extern crate std;
 
-use sea;
+use verifier;
 
 #[allow(deprecated)]
 use alloc::alloc::{Layout, LayoutErr};
@@ -2137,7 +2137,7 @@ where
 
 #[no_mangle]
 pub extern "C" fn entrypt() {
-    let v: u8 = sea::nd_u8();
+    let v: u8 = verifier::any!();
     match v {
         0 => test_push(),
         1 => test_retain(),
@@ -2148,112 +2148,120 @@ pub extern "C" fn entrypt() {
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(6))]
 fn test_push() {
     const CAP: usize = 4;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= CAP);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
 
     for i in 0..len {
-        v.push(sea::nd_u32());
-        sea::sassert!(v.len() == i + 1);
+        v.push(verifier::any!());
+        verifier::vassert!(v.len() == i + 1);
     }
 
-    sea::sassert!(v.len() == len);
-    sea::sassert!(v.capacity() == CAP);
+    verifier::vassert!(v.len() == len);
+    verifier::vassert!(v.capacity() == CAP);
 
     for _i in len..CAP + 1 {
-        v.push(sea::nd_u32());
+        v.push(verifier::any!());
     }
 
-    sea::sassert!(v.len() == CAP + 1);
-    sea::sassert!(v.capacity() > CAP);
+    verifier::vassert!(v.len() == CAP + 1);
+    verifier::vassert!(v.capacity() > CAP);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_retain() {
     const CAP: usize = 4;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= CAP);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
 
     for i in 1..=len {
-        let val: u32 = sea::nd_u32();
+        let val: u32 = verifier::any!();
         if (i & 1) == 0 {
-            sea::assume((val & 1) == 0);
+            verifier::assume!((val & 1) == 0);
         } else {
-            sea::assume((val & 1) == 1);
+            verifier::assume!((val & 1) == 1);
         }
         v.push(val);
     }
 
     v.retain(|x| (*x & 1) == 0);
 
-    sea::sassert!(v.len() == len >> 1);
-    sea::sassert!(v.capacity() == CAP);
+    verifier::vassert!(v.len() == len >> 1);
+    verifier::vassert!(v.capacity() == CAP);
 
     v.retain(|x| (*x & 1) == 1);
 
-    sea::sassert!(v.len() == 0);
-    sea::sassert!(v.capacity() == CAP);
+    verifier::vassert!(v.len() == 0);
+    verifier::vassert!(v.capacity() == CAP);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_retain_mut() {
     const CAP: usize = 4;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= CAP);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
 
     for i in 1..=len {
-        let val: u32 = sea::nd_u32();
+        let val: u32 = verifier::any!();
         if (i & 1) == 0 {
-            sea::assume((val & 1) == 0);
+            verifier::assume!((val & 1) == 0);
         } else {
-            sea::assume((val & 1) == 1);
+            verifier::assume!((val & 1) == 1);
         }
         v.push(val);
     }
 
     v.retain_mut(|x| (*x & 1) == 0);
 
-    sea::sassert!(v.len() == len / 2);
-    sea::sassert!(v.capacity() == CAP);
+    verifier::vassert!(v.len() == len / 2);
+    verifier::vassert!(v.capacity() == CAP);
 
     v.retain_mut(|x| (*x & 1) == 1);
 
-    sea::sassert!(v.len() == 0);
-    sea::sassert!(v.capacity() == CAP);
+    verifier::vassert!(v.len() == 0);
+    verifier::vassert!(v.capacity() == CAP);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(9))]
 fn test_try_grow() {
     const CAP: usize = 4;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= CAP);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
 
     for _i in 0..len {
-        v.push(sea::nd_u32());
+        v.push(verifier::any!());
     }
 
-    let new_cap: usize = sea::nd_usize();
-    sea::assume(new_cap > CAP && new_cap <= CAP * 2);
+    let new_cap: usize = verifier::any!();
+    verifier::assume!(new_cap > CAP && new_cap <= CAP * 2);
 
     let result: Result<(), CollectionAllocErr> = v.try_grow(new_cap);
 
-    sea::sassert!(result.is_ok());
-    sea::sassert!(v.len() == len);
-    sea::sassert!(v.capacity() == new_cap);
+    verifier::vassert!(result.is_ok());
+    verifier::vassert!(v.len() == len);
+    verifier::vassert!(v.capacity() == new_cap);
 
-    let new_cap2: usize = sea::nd_usize();
-    sea::assume(new_cap2 < len);
+    let new_cap2: usize = verifier::any!();
+    verifier::assume!(new_cap2 < len);
 
     let result2: Result<(), CollectionAllocErr> = v.try_grow(new_cap2);
 
-    sea::sassert!(result2.is_err());
+    verifier::vassert!(result2.is_err());
 }

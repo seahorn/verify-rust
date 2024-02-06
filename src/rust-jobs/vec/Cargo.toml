@@ -11,7 +11,13 @@ edition = "2021"
 crate-type = ["staticlib"]
 path = "lib.rs"
 
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = false
+features = ["no_std"]
+
 [dependencies]
+cfg-if = "0.1.10"
 
 [dependencies.sea]
 path = "../../sea-lib"

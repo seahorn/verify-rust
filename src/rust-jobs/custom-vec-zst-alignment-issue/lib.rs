@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 
 extern crate alloc;
 use alloc::alloc::{Layout, alloc, realloc, dealloc, handle_alloc_error};
@@ -19,6 +19,7 @@ pub extern "C" fn entrypt() {
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_alignment_bug() {
     #[repr(align(4))] // alignmnet size of 4
     struct ZST { }
@@ -57,9 +58,9 @@ fn test_alignment_bug() {
         }
     }
 
-    sea::sassert!(unaligned_start);
-    sea::sassert!(unaligned_end);
-    // sea::sassert!(false);
+    verifier::vassert!(unaligned_start);
+    verifier::vassert!(unaligned_end);
+    // verifier::vassert!(false);
 }
 
 

@@ -1,20 +1,21 @@
-#![no_std]
-pub use sea;
+#![cfg_attr(not(kani), no_std)]
+pub use verifier;
 
 extern crate alloc;
 use alloc::string::String;
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    sea::sea_printf!("sea_printf! macro test", 5, 5, 9);
+    // sea::sea_printf!("sea_printf! macro test", 5, 5, 9);
 
-    let x = sea::nd_i32();
+    let x = verifier::any!();
     let res = check_and_return(x);
     if x >= 0 {
-        sea::sassert!(res == x);
+        verifier::vassert!(res == x);
     } else {
-        sea::sassert!(res == -1);
+        verifier::vassert!(res == -1);
     }
 }
 

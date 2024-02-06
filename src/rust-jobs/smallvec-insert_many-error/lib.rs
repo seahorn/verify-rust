@@ -24,7 +24,7 @@
 //! ### `write`
 //!
 //! When this feature is enabled, `SmallVec<[u8; _]>` implements the `std::io::Write` trait.
-//! This feature is not compatible with `#![no_std]` programs.
+//! This feature is not compatible with `#![cfg_attr(not(kani), no_std)]` programs.
 //!
 //! ### `union`
 //!
@@ -70,7 +70,7 @@
 //!
 //! Tracking issue: [rust-lang/rust#34761](https://github.com/rust-lang/rust/issues/34761)
 
-// #![no_std]
+// #![cfg_attr(not(kani), no_std)]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
@@ -1976,7 +1976,7 @@ where
     }
 }
 
-use sea;
+use verifier;
 
 // https://github.com/servo/rust-smallvec/commit/9998ba0694a6b51aa6604748b00b6a98f0a0039e
 // We want to verify that we are able to catch the error fixed in this commit. There was an issue
@@ -1984,11 +1984,13 @@ use sea;
 // the reproduction code from the issue report on GitHub to make a test case. We are using version
 // 1.6.0 of smallvec, which is the most recent version that contains the bug.
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(4))]
 pub extern "C" fn entrypt() {
     let mut v: SmallVec<[u8; 0]> = SmallVec::new();
 
     // Spill on heap
-    v.push(sea::nd_u8());
+    v.push(verifier::any!());
 
     // Allocate string on heap
     let s = String::from("A");
@@ -2000,5 +2002,5 @@ pub extern "C" fn entrypt() {
     v.insert_many(0, iter);
 
     // Uh oh, heap overflow made smallvec and string to overlap
-    sea::sassert!(!v.as_ptr_range().contains(&s.as_ptr()));
+    verifier::vassert!(!v.as_ptr_range().contains(&s.as_ptr()));
 }

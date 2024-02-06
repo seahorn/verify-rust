@@ -1,9 +1,9 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 
 // use serde::{Serialize, Deserialize, Serializer, Deserializer};
 // use heapless::Vec;
 
-use sea;
+use verifier;
 // use serde::{Serialize, Deserialize};
 // use core::fmt::Error;
 
@@ -28,8 +28,9 @@ pub extern "C" fn entrypt() {
 // use alloc::string::String;
 // use crate::alloc::string::ToString;
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test() {
-    let v: i32 = sea::nd_i32();
+    let v: i32 = verifier::any!();
 
     let result: Option<i32> = if (v & 1) == 1 { 
         None 
@@ -40,29 +41,29 @@ fn test() {
     let result = result.unwrap_or(0);
 
     if (v & 1) == 0 {
-        sea::sassert!(result == v);
+        verifier::vassert!(result == v);
     } else {
-        sea::sassert!(result == 0);
+        verifier::vassert!(result == 0);
     }
 
-    // let x: bool = sea::nd_bool();
+    // let x: bool = verifier::any!();
     // if x { panic!(); }
-    // sea::sassert!(false);
+    // verifier::vassert!(false);
     // let data: u32 = 10;
 
     // let serialized: serde_json_core::heapless::String<1> = serde_json_core::to_string(&data).unwrap();
     // let serialized: String = serde_json_core::to_string::<u32, 1>(&data).unwrap().to_string();
     // panic!();
-    // // sea::sassert!(false);
+    // // verifier::vassert!(false);
 
     // let deserialized: u32 = serde_json_core::from_str(&serialized).unwrap().0;
     
 
-    // sea::sassert!(data == deserialized);
+    // verifier::vassert!(data == deserialized);
 
 
-    // sea::sassert!(data == deserialized.1);
-    // sea::sassert!(false);
+    // verifier::vassert!(data == deserialized.1);
+    // verifier::vassert!(false);
 
 
     // let serialized: String = serde_json_core::to_string::<Point, 21>(&data).unwrap().to_string();
@@ -92,14 +93,14 @@ fn test() {
     //     c: Point,
     // }
     // fn nd_num_type() -> NumType {
-    //     let num_type: u8 = sea::nd_u8();
-    //     sea::assume(num_type < 6);
+    //     let num_type: u8 = verifier::any!();
+    //     verifier::assume!(num_type < 6);
     //     match num_type {
-    //         0 => NumType::U8(sea::nd_u8()),
-    //         1 => NumType::U32(sea::nd_u32()),
+    //         0 => NumType::U8(verifier::any!()),
+    //         1 => NumType::U32(verifier::any!()),
     //         2 => NumType::I8(sea::nd_i8()),
-    //         3 => NumType::I32(sea::nd_i32()),
-    //         4 => NumType::USIZE(sea::nd_usize()),
+    //         3 => NumType::I32(verifier::any!()),
+    //         4 => NumType::USIZE(verifier::any!()),
     //         5 => NumType::ISIZE(sea::nd_isize()),
     //         _ => panic!(),
     //     }
@@ -126,7 +127,7 @@ fn test() {
     // let deserialized: Quaternion = serde_json::from_str(&serialized).unwrap();
     
 
-    // sea::sassert!(q == deserialized);
+    // verifier::vassert!(q == deserialized);
     // panic!();
 
     // serialized: Quaternion = serde_json::from_str(&serialized).unwrap();
@@ -144,5 +145,5 @@ fn test() {
     // Ok(())
     // Print the deserialized value
     // println!("Deserialized value: {}", decoded.value);
-    // sea::sassert!(false);
+    // verifier::vassert!(false);
 // }

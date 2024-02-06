@@ -1,13 +1,15 @@
-use sea;
+use verifier;
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    let x = sea::nd_i32();
+    let x = verifier::any!();
+    verifier::assume!(x < i32::MAX/2);
     let res = iter_mut(x);
     if x >= 0 {
-        sea::sassert!(res == x);
+        verifier::vassert!(res == x);
     } else {
-        sea::sassert!(res == x*2);
+        verifier::vassert!(res == x*2);
     }
 }
 

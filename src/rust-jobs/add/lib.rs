@@ -1,18 +1,14 @@
-// #[cfg(feature = "feature_no_std")]
-#![no_std]
-pub use sea;
+#![cfg_attr(not(kani), no_std)]
 
-// Entry point for the proof
+use verifier;
+
+
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    test_test1();
-}
-
-#[no_mangle]
-fn test_test1() {
-    let mut x: i32 = sea::nd_i32();
-    sea::assume(x < 10);
+    let mut x: i32 = verifier::any!();
+    verifier::assume!(x < 10);
     x += 4;
 
-    sea::sassert!(x < 14);
+    verifier::vassert!(x < 14);
 }

@@ -1,0 +1,3 @@
+c_rust_llvm(ro_shared_references ro_shared_references.c)
+
+sea_add_unsat_test(ro_shared_references)

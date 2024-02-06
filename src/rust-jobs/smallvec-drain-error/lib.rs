@@ -24,7 +24,7 @@
 //! ### `write`
 //!
 //! When this feature is enabled, `SmallVec<[u8; _]>` implements the `std::io::Write` trait.
-//! This feature is not compatible with `#![no_std]` programs.
+//! This feature is not compatible with `#![cfg_attr(not(kani), no_std)]` programs.
 //!
 //! ### `union`
 //!
@@ -70,7 +70,7 @@
 //!
 //! Tracking issue: [rust-lang/rust#34761](https://github.com/rust-lang/rust/issues/34761)
 
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
@@ -1978,22 +1978,24 @@ where
     }
 }
 
-use sea;
+use verifier;
 
 // Testing the error fixed here: https://github.com/servo/rust-smallvec/pull/259
 // We have to compile from source as Cargo workspaces don't allow multiple versions
 // of the same crate and to remove some assertions from the drain function that were
 // causing it to panic. 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(16))]
 pub extern "C" fn entrypt() {
     const CAP: usize = 8;
     let mut v: SmallVec<[u8; CAP]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= CAP);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
 
     for _i in 0..len {
-        v.push(sea::nd_u8());
+        v.push(verifier::any!());
     }
 
     // In smallvec versions 1.6.0 and below, this will execute succesfully.
@@ -2001,5 +2003,5 @@ pub extern "C" fn entrypt() {
     let _ = v.drain(..=usize::MAX);
 
     // This assertion will only be reached if the previous operation doesn't panic.
-    sea::sassert!(false);
+    verifier::vassert!(false);
 }

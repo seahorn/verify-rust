@@ -1,14 +1,16 @@
-#![no_std]
-pub use sea;
+#![cfg_attr(not(kani), no_std)]
+pub use verifier;
 extern crate alloc;
 use alloc::vec::Vec;
 
 // sea::define_sea_nd!(sea_nd_u8, u8, 42);
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(10))]
 pub extern "C" fn entrypt() {
     // let v: u8 = sea_nd_u8();
-    let v = sea::nd_u8();
+    let v: u8 = verifier::any!();
 
     let capacity: usize = v as usize;
     let mut nums: Vec<Option<u32>> = Vec::with_capacity(capacity);
@@ -27,7 +29,7 @@ pub extern "C" fn entrypt() {
         }
     }
 
-    sea::sassert!(sum >= (v as u32)*(v as u32));
+    verifier::vassert!(sum >= (v as u32)*(v as u32));
 }
 
 fn square(val: Option<u32>) -> Option<u32> {

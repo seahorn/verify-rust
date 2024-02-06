@@ -12,6 +12,12 @@ path = "lib.rs"
 [dependencies]
 libc = "0.2"
 custom-print = "0.1.0"
+cfg-if = "0.1.10"
+
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = true
+features = ["no_std"]
 
 [dependencies.sea]
 path = "../../sea-lib"

@@ -1,0 +1,27 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "realloc-not-initiallized-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib"]
+path = "lib.rs"
+
+[dependencies]
+libc = "0.2"
+cfg-if = "0.1.10"
+
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = false
+features = ["std"]
+
+[dependencies.sea]
+path = "../../sea-lib"
+default-features = false
+features = ["std"]
+
+[features]
+default = []  # Specify other default features here, if any        

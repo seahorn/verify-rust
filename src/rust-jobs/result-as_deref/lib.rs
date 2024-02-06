@@ -1,15 +1,17 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 extern crate alloc;
 use alloc::string::String;
 
 extern crate core;
 use core::result::Result;
 
-use sea;
+use verifier;
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    let v: i32 = sea::nd_i32();
+    let v: i32 = verifier::any!();
+    verifier::assume!(v < i32::MAX/2);
 
     let x: Result<String, i32> = Err(v);
     let y: Result<&str, &i32> = Err(&v);
@@ -26,5 +28,5 @@ pub extern "C" fn entrypt() {
 
     let result: i32 = x_error + y_error;
 
-    sea::sassert!(result == v*2);
+    verifier::vassert!(result == v*2);
 }

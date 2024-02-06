@@ -1,7 +1,8 @@
 #include "inc/lib.h"
+#include "seahorn/seahorn.h"
 
 int main() {
   entrypt();
-  return 0;
+  return 42;
 }
 

@@ -11,6 +11,14 @@ edition = "2021"
 crate-type = ["staticlib"]
 path = "lib.rs"
 
+[dependencies]
+cfg-if = "0.1.10"
+
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = false
+features = ["panic_error"]
+
 [dependencies.sea]
 path = "../../sea-lib"
 default-features = false

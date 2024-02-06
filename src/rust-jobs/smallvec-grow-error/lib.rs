@@ -28,7 +28,7 @@
 //! To use this feature add `features = ["union"]` in the `smallvec` section of Cargo.toml.
 //! Note that this feature requires a nightly compiler (for now).
 
-// #![cfg_attr(not(feature = "std"), no_std)]
+// #![cfg_attr(not(kani), no_std)]
 // #![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(feature = "union", feature(untagged_unions))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
@@ -1606,21 +1606,23 @@ impl_array!(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 32
             0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000,
             0x10000, 0x20000, 0x40000, 0x80000, 0x100000);
 
-use sea;
+use verifier;
 
 // https://github.com/servo/rust-smallvec/commit/50a50ed90d6ad78d812a40680257d8338843869a
 // We wanted to verify that SeaHorn was able to catch the error introduced in this commit.
 // Calls to "grow" were not correctly shrinking the vector after it had been spilled. This 
 // testing code was modified from the unit test that was added with the fix to the bug.
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(17))]
 pub extern "C" fn entrypt() {
     let mut v: SmallVec<[u32; 8]> = SmallVec::new();
     
-    let len: usize = sea::nd_usize();
-    sea::assume(len <= 16);
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= 16);
 
     for _ in 0..len {
-        v.push(sea::nd_u32());
+        v.push(verifier::any!());
     }
 
     v.clear();
@@ -1628,7 +1630,7 @@ pub extern "C" fn entrypt() {
     // Shrink to inline.
     v.grow(8);
 
-    sea::sassert!(!v.spilled());
-    sea::sassert!(v.capacity() == 8);
-    sea::sassert!(v.len() == 0);
+    verifier::vassert!(!v.spilled());
+    verifier::vassert!(v.capacity() == 8);
+    verifier::vassert!(v.len() == 0);
 }

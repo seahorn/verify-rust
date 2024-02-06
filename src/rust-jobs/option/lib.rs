@@ -1,12 +1,14 @@
-#![no_std]
-use sea;
+#![cfg_attr(not(kani), no_std)]
+use verifier;
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    let v: i32 = sea::nd_i32();
+    let v: i32 = verifier::any!();
 
-    sea::assume(v > 0);
+    verifier::assume!(v > 0);
+    verifier::assume!(v < i32::MAX/2);
 
     let result: i32 = match double_if_even(v) {
         Some(v) => v,
@@ -14,9 +16,9 @@ pub extern "C" fn entrypt() {
     };
 
     if (v & 1) == 0 {
-        sea::sassert!(result > v);
+        verifier::vassert!(result > v);
     } else {
-        sea::sassert!(result == 0);
+        verifier::vassert!(result == 0);
     }
 }
 

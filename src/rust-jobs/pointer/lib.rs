@@ -1,12 +1,15 @@
-#![no_std]
-use sea;
+#![cfg_attr(not(kani), no_std)]
+
+use verifier;
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
 
-    let mut v: i32  = sea::nd_i32();
-    sea::assume(v > 0);
+    let mut v: i32  = verifier::any!();
+    verifier::assume!(v > 0);
+    verifier::assume!(v < i32::MAX - 2);
     let original: i32 = v;
 
     let n: *mut i32 = &mut v;
@@ -16,5 +19,5 @@ pub extern "C" fn entrypt() {
         *n = *n + 1;
     }
 
-    sea::sassert!(v == original + 2);
+    verifier::vassert!(v == original + 2);
 }

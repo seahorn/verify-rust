@@ -1,3 +1,3 @@
 c_rust_llvm(add add.c)
 
-sea_discover_tests(add)
+sea_add_unsat_test(add)

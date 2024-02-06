@@ -19,13 +19,17 @@ serde-json-core = "0.5.1"
 serde = { version = "1", default-features = false }
 # serde_derive = { version = "1", features = ["std"] } # Disable std feature for serde_derive
 heapless = "0.7" # For I/O operations in no_std environment
+cfg-if = "0.1.10"
 
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = false
+features = ["panic_error"]
 
 [dependencies.sea]
 path = "../../sea-lib"
 default-features = false
 features = ["panic_error"]
-# features = ["std"]
 
 
 # [dependencies.serde]

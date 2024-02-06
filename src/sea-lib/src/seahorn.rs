@@ -1,38 +1,11 @@
 use crate::bindings::*;
+use sea_nd_func::generate_impl;
 
 #[no_mangle]
 pub fn verifier_error() { unsafe { __VERIFIER_error(); } }
 
 #[no_mangle]
 pub fn assume(v: bool) { unsafe { __VERIFIER_assume(v.into()); } }
-
-#[no_mangle]
-pub fn nd_i8() -> i8 { unsafe { sea_nd_i8() } }
-#[no_mangle]
-pub fn nd_u8() -> u8 { unsafe { sea_nd_u8() } }
-#[no_mangle]
-pub fn nd_i16() -> i16 { unsafe { sea_nd_i16() } }
-#[no_mangle]
-pub fn nd_u16() -> u16 { unsafe { sea_nd_u16() } }
-#[no_mangle]
-pub fn nd_i32() -> i32 { unsafe { sea_nd_i32() } }
-#[no_mangle]
-pub fn nd_u32() -> u32 { unsafe { sea_nd_u32() } }
-#[no_mangle]
-pub fn nd_i64() -> i64 { unsafe { sea_nd_i64() } }
-#[no_mangle]
-pub fn nd_u64() -> u64 { unsafe { sea_nd_u64() } }
-#[no_mangle]
-pub fn nd_usize() -> usize { unsafe { sea_nd_usize() } }
-#[no_mangle]
-pub fn nd_isize() -> isize { unsafe { sea_nd_isize() } }
-#[no_mangle]
-pub fn nd_uintptr() -> usize { unsafe { sea_nd_uintptr() } }
-#[no_mangle]
-pub fn nd_intptr() -> isize { unsafe { sea_nd_intptr() } }
-
-#[no_mangle]
-pub fn nd_bool() -> bool { unsafe { sea_nd_bool() } }
 
 #[macro_export]
 macro_rules! sea_printf {
@@ -50,4 +23,29 @@ macro_rules! sassert {
             sea::verifier_error();
         }
     }};
+}
+
+pub trait Arbitrary
+where
+    Self: Sized,
+{
+    fn any() -> Self;
+}
+
+generate_impl!(i8);
+generate_impl!(u8);
+generate_impl!(i16);
+generate_impl!(u16);
+generate_impl!(i32);
+generate_impl!(u32);
+generate_impl!(i64);
+generate_impl!(u64);
+generate_impl!(bool);
+generate_impl!(usize);
+generate_impl!(isize);
+
+
+#[inline(always)]
+pub fn any<T: Arbitrary>() -> T {
+    T::any()
 }

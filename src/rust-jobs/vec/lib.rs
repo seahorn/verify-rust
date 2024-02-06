@@ -1,11 +1,12 @@
-#![no_std]
-pub use sea;
+#![cfg_attr(not(kani), no_std)]
+pub use verifier;
 
 extern crate alloc;
 use alloc::vec;
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
     let mut v: vec::Vec<i32> = vec![1, 2, 3]; // L = 3
 
@@ -16,5 +17,5 @@ pub extern "C" fn entrypt() {
 
     let result: usize = v.len();
 
-    sea::sassert!(result == 5);
+    verifier::vassert!(result == 5);
 }

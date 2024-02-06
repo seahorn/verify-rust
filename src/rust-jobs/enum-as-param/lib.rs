@@ -1,5 +1,5 @@
-#![no_std]
-pub use sea;
+#![cfg_attr(not(kani), no_std)]
+pub use verifier;
 
 #[repr(C)]
 pub enum CEnum {
@@ -9,13 +9,14 @@ pub enum CEnum {
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    let v: i32 = sea::nd_i32();
-    sea::assume(v == 102);
+    let v: i32 = verifier::any!();
+    verifier::assume!(v == 102);
 
     let result: i32 = enum_param_test(CEnum::KValTwo);
 
-    sea::sassert!(result == v);
+    verifier::vassert!(result == v);
 }
 
 #[no_mangle]

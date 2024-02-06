@@ -1,11 +1,12 @@
-#![no_std]
-use sea;
+#![cfg_attr(not(kani), no_std)]
+use verifier;
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
-    let v: i32 = sea::nd_i32();
-    let w: i32 = sea::nd_i32();
+    let v: i32 = verifier::any!();
+    let w: i32 = verifier::any!();
 
     let val1: Option<i32> = if (v & 1) == 1 { 
         None 
@@ -18,9 +19,9 @@ pub extern "C" fn entrypt() {
     let result: i32 = val1.or(val2).unwrap();
 
     if (v & 1) == 0 {
-        sea::sassert!(result == v);
+        verifier::vassert!(result == v);
     } else {
-        sea::sassert!(result == w);
+        verifier::vassert!(result == w);
     }
     // panic!();
 }

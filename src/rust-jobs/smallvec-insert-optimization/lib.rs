@@ -24,7 +24,7 @@
 //! ### `write`
 //!
 //! When this feature is enabled, `SmallVec<[u8; _]>` implements the `std::io::Write` trait.
-//! This feature is not compatible with `#![no_std]` programs.
+//! This feature is not compatible with `#![cfg_attr(not(kani), no_std)]` programs.
 //!
 //! ### `union`
 //!
@@ -76,7 +76,7 @@
 //!
 //! Tracking issue: [rust-lang/rust#34761](https://github.com/rust-lang/rust/issues/34761)
 
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
@@ -2133,7 +2133,7 @@ where
     }
 }
 
-use sea;
+use verifier;
 
 // https://github.com/servo/rust-smallvec/commit/b2335682bcaf6d0b33d6c0caeb077d9aaa608b6d
 // We want to verify that the optimizations to "insert" made in this commit work as intended
@@ -2142,26 +2142,28 @@ use sea;
 // when the insertion point is not at the end of the vector. In the Cargo configuration, we have
 // the "panic_error" feature enabled to ensure that there are no unexpected panics.
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(8))]
 pub extern "C" fn entrypt() {
     let mut v: SmallVec<[u32; 8]> = SmallVec::new();
 
-    let len: usize = sea::nd_usize();
-    sea::assume(len < 8);
+    let len: usize = verifier::any!();
+    verifier::assume!(len < 8);
 
     for _i in 0..len {
-        v.push(sea::nd_u32());
+        v.push(verifier::any!());
     }
 
-    let insert_point: usize = sea::nd_usize();
-    sea::assume(insert_point <= len);
+    let insert_point: usize = verifier::any!();
+    verifier::assume!(insert_point <= len);
 
-    v.insert(insert_point, sea::nd_u32());
+    v.insert(insert_point, verifier::any!());
 
     if insert_point == len {
-        sea::sassert!(v.copied() == false);
+        verifier::vassert!(v.copied() == false);
     } else {
-        sea::sassert!(v.copied() == true);
+        verifier::vassert!(v.copied() == true);
     }
 
-    sea::sassert!(v.len() == len + 1);
+    verifier::vassert!(v.len() == len + 1);
 }

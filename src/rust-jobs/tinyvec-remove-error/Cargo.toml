@@ -12,6 +12,12 @@ path = "lib.rs"
 [dependencies]
 libc = "0.2"
 tinyvec = "0.2.0"  # Latest release that still contains the error: https://github.com/Lokathor/tinyvec/pull/29
+cfg-if = "0.1.10"
+
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = false
+features = ["no_std"]
 
 [dependencies.sea]
 path = "../../sea-lib"

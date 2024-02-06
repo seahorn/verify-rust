@@ -1,7 +1,7 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![feature(core_panic)]
 
-use sea;
+use verifier;
 
 
 // ************************************
@@ -14,10 +14,11 @@ use sea;
 #[no_mangle]
 pub extern "C" fn entrypt() {
     test();
-    sea::sassert!(true);
+    verifier::vassert!(true);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test() {
     panic!();
 

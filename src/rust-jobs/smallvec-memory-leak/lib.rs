@@ -19,7 +19,7 @@
 //! ### `write`
 //!
 //! When this feature is enabled, `SmallVec<[u8; _]>` implements the `std::io::Write` trait.
-//! This feature is not compatible with `#![no_std]` programs.
+//! This feature is not compatible with `#![cfg_attr(not(kani), no_std)]` programs.
 //!
 //! ### `union`
 //!
@@ -57,7 +57,7 @@
 //! references. For details, see the
 //! [Rustonomicon](https://doc.rust-lang.org/1.42.0/nomicon/dropck.html#an-escape-hatch).
 
-// #![no_std]
+// #![cfg_attr(not(kani), no_std)]
 #![cfg_attr(feature = "union", feature(untagged_unions))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
@@ -1742,13 +1742,14 @@ impl<A:Array> ToSmallVec<A> for [A::Item]
     }
 }
 
-// use sea;
+// use verifier;
 
 // https://github.com/servo/rust-smallvec/pull/213/commits/8ddf61330d73bd1b33ed01e03f2bf0b8aaba8d11
 // This commit fixed an issue with memory leaks in the "insert_many" function. We want to verify
 // that seahorn is able to catch the leak. The test is modified from the source code and causes the
 // leak by providing a panicking iterator in the call to "insert_many".
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
     struct PanicOnDoubleDrop {
         dropped: Box<bool>,

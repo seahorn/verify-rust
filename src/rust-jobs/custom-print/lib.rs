@@ -7,6 +7,7 @@ macro_rules! print { ($($args:tt)*) => { cprint!($($args)*); } }
 // macro_rules! eprintln { ($($args:tt)*) => { ceprintln!($($args)*); } }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
     print!("test");
     // println!("test");

@@ -1,11 +1,12 @@
-use sea;
+use verifier;
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
     let x: String = "ab".to_string();
 
 
-    sea::sassert!(x == "ab".to_string());
+    verifier::vassert!(x == "ab".to_string());
  
 
 
@@ -24,6 +25,6 @@ pub extern "C" fn entrypt() {
     //     }
     // }
 
-    // sea::sassert!(x == array.iter().map(|&byte| byte as char).collect::<String>());
-    // sea::sassert!(false);
+    // verifier::vassert!(x == array.iter().map(|&byte| byte as char).collect::<String>());
+    // verifier::vassert!(false);
 }

@@ -70,7 +70,7 @@ INLINE int bcmp(const void *s1, const void *s2, size_t n) {
     return 0;
   if (p1 == NULL || p2 == NULL)
     return 1;
-  /* pre-unroll the loop for MAX_BUFFER_SIZE */
+  // /* pre-unroll the loop for MAX_BUFFER_SIZE */
   #pragma unroll 32
   for (i = 0; i < max_buffer_size; i++) {
     if (i < n) {
@@ -80,10 +80,9 @@ INLINE int bcmp(const void *s1, const void *s2, size_t n) {
     }
   }
   /* unroll the rest, if any (doesn't really work) */
-  // for (i = max_buffer_size; i < n; i++) {
-  //   if (p1[i] != p2[i])
-  //     return 1;
-  // }
-
+  /* for (i = max_buffer_size; i < n; i++) { */
+  /*   if (p1[i] != p2[i]) */
+  /*     return 1; */
+  /* } */
   return 0;
 }

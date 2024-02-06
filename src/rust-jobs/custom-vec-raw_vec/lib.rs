@@ -1,7 +1,7 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![feature(new_uninit)]
 
-use sea;
+use verifier;
 
 extern crate alloc;
 use alloc::alloc::{Layout, alloc, dealloc, realloc, handle_alloc_error};
@@ -32,24 +32,26 @@ pub extern "C" fn entrypt() {
     test_into_iter_size();
     test_into_iter_drop();
 
-    // sea::sassert!(false);
+    // verifier::vassert!(false);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_new() {
     let v: CustomVec<i32> = CustomVec::new();
-    sea::sassert!(custom_vec_valid_after_init(&v));
-    sea::sassert!(v.len == 0);
-    sea::sassert!(v.cap() == 0);
-    sea::sassert!(!v.ptr().is_null());
+    verifier::vassert!(custom_vec_valid_after_init(&v));
+    verifier::vassert!(v.len == 0);
+    verifier::vassert!(v.cap() == 0);
+    verifier::vassert!(!v.ptr().is_null());
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_grow() {
-    let original = sea::nd_usize();
+    let original = verifier::any!();
 
     let mut v: CustomVec<i32> = CustomVec::new();
-    sea::sassert!(custom_vec_valid_after_init(&v));
+    verifier::vassert!(custom_vec_valid_after_init(&v));
 
     v.len = original;
     v.buf.cap = original;
@@ -57,20 +59,21 @@ fn test_grow() {
     v.buf.grow();
 
     if original == 0 {
-        sea::sassert!(v.cap() == 1)
+        verifier::vassert!(v.cap() == 1)
     } else {
-        sea::sassert!(v.cap() == 2 * original);
+        verifier::vassert!(v.cap() == 2 * original);
     }
-    sea::sassert!(v.len == original);
+    verifier::vassert!(v.len == original);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_pop() {
-    let original = sea::nd_usize();
-    sea::assume(original > 0);
+    let original = verifier::any!();
+    verifier::assume!(original > 0);
 
     let mut v: CustomVec<i32> = CustomVec::new();
-    sea::sassert!(custom_vec_valid_after_init(&v));
+    verifier::vassert!(custom_vec_valid_after_init(&v));
 
     v.len = original;
     v.buf.cap = original;
@@ -78,29 +81,31 @@ fn test_pop() {
     v.buf.grow();
     v.pop();
 
-    sea::sassert!(v.len == original - 1);
-    sea::sassert!(v.cap() == original * 2);
+    verifier::vassert!(v.len == original - 1);
+    verifier::vassert!(v.cap() == original * 2);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_push() {
-    let original = sea::nd_usize();
-    sea::assume(original > 0);
+    let original = verifier::any!();
+    verifier::assume!(original > 0);
 
     let mut v: CustomVec<i32> = CustomVec::new();
-    sea::sassert!(custom_vec_valid_after_init(&v));
+    verifier::vassert!(custom_vec_valid_after_init(&v));
 
     v.len = original;
     v.buf.cap = original;
 
     v.buf.grow();
     v.push(0);   
-    sea::sassert!(v.len == original + 1);
-    sea::sassert!(v.cap() == original * 2);
-    // sea::sassert!(false);
+    verifier::vassert!(v.len == original + 1);
+    verifier::vassert!(v.cap() == original * 2);
+    // verifier::vassert!(false);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_drop() {
     pub struct DropTest { _value: i32, }
     impl Drop for DropTest {
@@ -117,25 +122,27 @@ fn test_drop() {
     _ = v.pop();
 
     drop(v);
-    sea::sassert!(unsafe { DROP_COUNT == original });
+    verifier::vassert!(unsafe { DROP_COUNT == original });
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_deref() {
-    let original: usize = sea::nd_usize();
-    let num_pops: usize = sea::nd_usize();
-    sea::assume(num_pops <= original);
+    let original: usize = verifier::any!();
+    let num_pops: usize = verifier::any!();
+    verifier::assume!(num_pops <= original);
 
     let mut v: CustomVec<i32> = CustomVec::new();
     for i in 0..original { v.push(i.try_into().unwrap()); }
     for _i in 0..num_pops { _ = v.pop(); }
     v.push(1);
     let slice: &[i32] = &*v;
-    sea::sassert!(slice.len() == original - num_pops + 1);
-    sea::sassert!(slice[slice.len()-1] == 1);
+    verifier::vassert!(slice.len() == original - num_pops + 1);
+    verifier::vassert!(slice[slice.len()-1] == 1);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_deref_mut() {
     let mut v: CustomVec<i32> = CustomVec::new();
     v.push(0);
@@ -148,42 +155,45 @@ fn test_deref_mut() {
     slice[1] = 40;
     slice.sort();
 
-    sea::sassert!(length == 3);
-    sea::sassert!(v.pop() == Some(40));
-    sea::sassert!(v.pop() == Some(10));
-    sea::sassert!(v.pop() == Some(5));
-    sea::sassert!(v.len == 0);
+    verifier::vassert!(length == 3);
+    verifier::vassert!(v.pop() == Some(40));
+    verifier::vassert!(v.pop() == Some(10));
+    verifier::vassert!(v.pop() == Some(5));
+    verifier::vassert!(v.len == 0);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_insert() {
     let mut v: CustomVec<i32> = CustomVec::new();
-    let n: usize = sea::nd_usize();
-    let index: usize = sea::nd_usize();
-    sea::assume(index <= n);
+    let n: usize = verifier::any!();
+    let index: usize = verifier::any!();
+    verifier::assume!(index <= n);
 
     for _i in 0..n { v.push(1); }
     
     v.insert(index, -1);
     let slice: &mut [i32] = &mut *v;
-    sea::sassert!(slice[index] == -1);
+    verifier::vassert!(slice[index] == -1);
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_remove() {
     let mut v: CustomVec<i32> = CustomVec::new();
-    let n: usize = sea::nd_usize();
-    sea::assume(n < 10);
-    let index: usize = sea::nd_usize();
-    sea::assume(index <= n);
+    let n: usize = verifier::any!();
+    verifier::assume!(n < 10);
+    let index: usize = verifier::any!();
+    verifier::assume!(index <= n);
 
     for i in 0..n { v.push(i.try_into().unwrap()); }
     
     let res: i32 = v.remove(index);
-    sea::sassert!(res == index.try_into().unwrap());
+    verifier::vassert!(res == index.try_into().unwrap());
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 #[inline(never)]
 fn test_into_iter_front() {
     let n: u32 = 5;
@@ -195,11 +205,12 @@ fn test_into_iter_front() {
 
     let mut iter: IntoIter<u32> = v.into_iter();
     for i in 0..n {
-        sea::sassert!(iter.next() == Some(i));
+        verifier::vassert!(iter.next() == Some(i));
     }
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_into_iter_back() {
     let n: u32 = 5;
 
@@ -210,11 +221,12 @@ fn test_into_iter_back() {
 
     let mut iter: IntoIter<u32> = v.into_iter();
     for i in 0..n {
-        sea::sassert!(iter.next_back() == Some(n-i-1));
+        verifier::vassert!(iter.next_back() == Some(n-i-1));
     }
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_into_iter_size() {
     let n = 10;
 
@@ -224,18 +236,19 @@ fn test_into_iter_size() {
     let mut iter: IntoIter<u32> = v.into_iter();
 
     for i in 0..n {
-        let front: bool = sea::nd_bool();
+        let front: bool = verifier::any!();
         if front {
             _ = iter.next();
         } else {
             _ = iter.next_back();
         }
         let size: usize = (n-i-1).try_into().unwrap();
-        sea::sassert!(iter.size_hint().0 == size);
+        verifier::vassert!(iter.size_hint().0 == size);
     }
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_into_iter_drop() {
     static mut DROP_COUNT: u32 = 0;
     pub struct DropTest { _value: u32, }
@@ -256,10 +269,10 @@ fn test_into_iter_drop() {
     iter.next_back();
     iter.next_back();
 
-    sea::sassert!(unsafe { DROP_COUNT == 4 });
+    verifier::vassert!(unsafe { DROP_COUNT == 4 });
 
     drop(iter);
-    sea::sassert!(unsafe { DROP_COUNT == 6 });
+    verifier::vassert!(unsafe { DROP_COUNT == 6 });
 }
 
 

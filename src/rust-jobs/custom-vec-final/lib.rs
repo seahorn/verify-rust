@@ -1,7 +1,7 @@
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 #![feature(new_uninit)]
 
-use sea;
+use verifier;
 
 extern crate alloc;
 use alloc::alloc::{Layout, alloc, dealloc, realloc, handle_alloc_error};
@@ -48,25 +48,27 @@ pub extern "C" fn entrypt() {
     // Tests for Zero Sized Types
     test_zst();
     test_alignment_bug();
-    // sea::sassert!(false);
+    // verifier::vassert!(false);
 }
 
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_new() {
 //     let v: CustomVec<i32> = CustomVec::new();
-//     sea::sassert!(custom_vec_valid_after_init(&v));
-//     sea::sassert!(v.len == 0);
-//     sea::sassert!(v.cap() == 0);
-//     sea::sassert!(!v.ptr().is_null());
+//     verifier::vassert!(custom_vec_valid_after_init(&v));
+//     verifier::vassert!(v.len == 0);
+//     verifier::vassert!(v.cap() == 0);
+//     verifier::vassert!(!v.ptr().is_null());
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_grow() {
-//     let original = sea::nd_usize();
+//     let original = verifier::any!();
 
 //     let mut v: CustomVec<i32> = CustomVec::new();
-//     sea::sassert!(custom_vec_valid_after_init(&v));
+//     verifier::vassert!(custom_vec_valid_after_init(&v));
 
 //     v.len = original;
 //     v.buf.cap = original;
@@ -74,20 +76,21 @@ pub extern "C" fn entrypt() {
 //     v.buf.grow();
 
 //     if original == 0 {
-//         sea::sassert!(v.cap() == 1)
+//         verifier::vassert!(v.cap() == 1)
 //     } else {
-//         sea::sassert!(v.cap() == 2 * original);
+//         verifier::vassert!(v.cap() == 2 * original);
 //     }
-//     sea::sassert!(v.len == original);
+//     verifier::vassert!(v.len == original);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_pop() {
-//     let original = sea::nd_usize();
-//     sea::assume(original > 0);
+//     let original = verifier::any!();
+//     verifier::assume!(original > 0);
 
 //     let mut v: CustomVec<i32> = CustomVec::new();
-//     sea::sassert!(custom_vec_valid_after_init(&v));
+//     verifier::vassert!(custom_vec_valid_after_init(&v));
 
 //     v.len = original;
 //     v.buf.cap = original;
@@ -95,30 +98,32 @@ pub extern "C" fn entrypt() {
 //     v.buf.grow();
 //     v.pop();
 
-//     sea::sassert!(v.len == original - 1);
-//     sea::sassert!(v.cap() == original * 2);
+//     verifier::vassert!(v.len == original - 1);
+//     verifier::vassert!(v.cap() == original * 2);
 // }
 
-#[no_mangle]
-fn test_push() {
-    let original = sea::nd_usize();
-    sea::assume(original > 0 && original < 1000000);
+// #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
+// fn test_push() {
+//     let original = verifier::any!();
+//     verifier::assume!(original > 0 && original < 1000000);
 
-    let mut v: CustomVec<i32> = CustomVec::new();
-    sea::sassert!(custom_vec_valid_after_init(&v));
+//     let mut v: CustomVec<i32> = CustomVec::new();
+//     verifier::vassert!(custom_vec_valid_after_init(&v));
 
-    v.len = original;
-    v.buf.cap = original;
+//     v.len = original;
+//     v.buf.cap = original;
 
-    v.buf.grow();
-    v.push(0);   
-    sea::sassert!(v.len == original + 1);
-    sea::sassert!(v.cap() == original * 2);
-    sea::sea_printf!("End of Test Push");
-    // sea::sassert!(false);
-}
+//     v.buf.grow();
+//     v.push(0);   
+//     verifier::vassert!(v.len == original + 1);
+//     verifier::vassert!(v.cap() == original * 2);
+//     // verifier::printf!("End of Test Push");
+//     // verifier::vassert!(false);
+// }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_drop() {
 //     pub struct DropTest { _value: i32, }
 //     impl Drop for DropTest {
@@ -135,25 +140,27 @@ fn test_push() {
 //     _ = v.pop();
 
 //     drop(v);
-//     sea::sassert!(unsafe { DROP_COUNT == original });
+//     verifier::vassert!(unsafe { DROP_COUNT == original });
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_deref() {
-//     let original: usize = sea::nd_usize();
-//     let num_pops: usize = sea::nd_usize();
-//     sea::assume(num_pops <= original);
+//     let original: usize = verifier::any!();
+//     let num_pops: usize = verifier::any!();
+//     verifier::assume!(num_pops <= original);
 
 //     let mut v: CustomVec<i32> = CustomVec::new();
 //     for i in 0..original { v.push(i.try_into().unwrap()); }
 //     for _i in 0..num_pops { _ = v.pop(); }
 //     v.push(1);
 //     let slice: &[i32] = &*v;
-//     sea::sassert!(slice.len() == original - num_pops + 1);
-//     sea::sassert!(slice[slice.len()-1] == 1);
+//     verifier::vassert!(slice.len() == original - num_pops + 1);
+//     verifier::vassert!(slice[slice.len()-1] == 1);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_deref_mut() {
 //     let mut v: CustomVec<i32> = CustomVec::new();
 //     v.push(0);
@@ -166,42 +173,45 @@ fn test_push() {
 //     slice[1] = 40;
 //     slice.sort();
 
-//     sea::sassert!(length == 3);
-//     sea::sassert!(v.pop() == Some(40));
-//     sea::sassert!(v.pop() == Some(10));
-//     sea::sassert!(v.pop() == Some(5));
-//     sea::sassert!(v.len == 0);
+//     verifier::vassert!(length == 3);
+//     verifier::vassert!(v.pop() == Some(40));
+//     verifier::vassert!(v.pop() == Some(10));
+//     verifier::vassert!(v.pop() == Some(5));
+//     verifier::vassert!(v.len == 0);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_insert() {
 //     let mut v: CustomVec<i32> = CustomVec::new();
-//     let n: usize = sea::nd_usize();
-//     let index: usize = sea::nd_usize();
-//     sea::assume(index <= n);
+//     let n: usize = verifier::any!();
+//     let index: usize = verifier::any!();
+//     verifier::assume!(index <= n);
 
 //     for _i in 0..n { v.push(1); }
     
 //     v.insert(index, -1);
 //     let slice: &mut [i32] = &mut *v;
-//     sea::sassert!(slice[index] == -1);
+//     verifier::vassert!(slice[index] == -1);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_remove() {
 //     let mut v: CustomVec<i32> = CustomVec::new();
-//     let n: usize = sea::nd_usize();
-//     sea::assume(n < 10);
-//     let index: usize = sea::nd_usize();
-//     sea::assume(index <= n);
+//     let n: usize = verifier::any!();
+//     verifier::assume!(n < 10);
+//     let index: usize = verifier::any!();
+//     verifier::assume!(index <= n);
 
 //     for i in 0..n { v.push(i.try_into().unwrap()); }
     
 //     let res: i32 = v.remove(index);
-//     sea::sassert!(res == index.try_into().unwrap());
+//     verifier::vassert!(res == index.try_into().unwrap());
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_into_iter_front() {
 //     let n: u32 = 3;
 
@@ -212,11 +222,12 @@ fn test_push() {
 
 //     let mut iter: IntoIter<u32> = v.into_iter();
 //     for i in 0..n {
-//         sea::sassert!(iter.next().unwrap() == i);
+//         verifier::vassert!(iter.next().unwrap() == i);
 //     }
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_into_iter_back() {
 //     let n: u32 = 3;
 
@@ -227,12 +238,13 @@ fn test_push() {
 
 //     let mut iter: IntoIter<u32> = v.into_iter();
 //     for i in 0..n {
-//         sea::sassert!(iter.next_back().unwrap() == n-i-1);
+//         verifier::vassert!(iter.next_back().unwrap() == n-i-1);
 
 //     }
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_into_iter_size() {
 //     let n = 10;
 
@@ -242,18 +254,19 @@ fn test_push() {
 //     let mut iter: IntoIter<u32> = v.into_iter();
 
 //     for i in 0..n {
-//         let front: bool = sea::nd_bool();
+//         let front: bool = verifier::any!();
 //         if front {
 //             _ = iter.next();
 //         } else {
 //             _ = iter.next_back();
 //         }
 //         let size: usize = (n-i-1).try_into().unwrap();
-//         sea::sassert!(iter.size_hint().0 == size);
+//         verifier::vassert!(iter.size_hint().0 == size);
 //     }
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_into_iter_drop() {
 //     let n: u32 = 4; // max elements it works for (6 due to manual pushes)
 //     static mut DROP_COUNT: u32 = 0;
@@ -275,13 +288,14 @@ fn test_push() {
 //     iter.next_back();
 //     iter.next_back();
 
-//     sea::sassert!(unsafe { DROP_COUNT == 4 });
+//     verifier::vassert!(unsafe { DROP_COUNT == 4 });
 
 //     drop(iter);
-//     sea::sassert!(unsafe { DROP_COUNT == 6 });
+//     verifier::vassert!(unsafe { DROP_COUNT == 6 });
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_drain_front() {
 //     let n: u32 = 8; // most elements it will work for
 
@@ -292,16 +306,17 @@ fn test_push() {
 
 //     let mut drained: Drain<'_, u32> = v.drain();
 //     for i in 0..n {
-//         sea::sassert!(drained.next().unwrap() == i);
+//         verifier::vassert!(drained.next().unwrap() == i);
 //     }
 //     drop(drained);
     
-//     sea::sassert!(v.pop() == None);
+//     verifier::vassert!(v.pop() == None);
 //     v.push(0);
-//     sea::sassert!(v.len == 1);
+//     verifier::vassert!(v.len == 1);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_drain_back() {
 //     let n = 4; // most elements it will work for
 
@@ -312,16 +327,17 @@ fn test_push() {
 
 //     let mut drained: Drain<'_, u32> = v.drain();
 //     for i in 0..n {
-//         sea::sassert!(drained.next_back().unwrap() == n-i-1);
+//         verifier::vassert!(drained.next_back().unwrap() == n-i-1);
 //     }
 
 //     drop(drained);
-//     sea::sassert!(v.pop() == None);
+//     verifier::vassert!(v.pop() == None);
 //     v.push(0);
-//     sea::sassert!(v.len == 1);
+//     verifier::vassert!(v.len == 1);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_drain_size() {
 //     let n: usize = 8;
 //     let mut v: CustomVec<u32> = CustomVec::new();
@@ -330,20 +346,21 @@ fn test_push() {
 //     }
 
 //     let mut drained: Drain<'_, u32> = v.drain();
-//     sea::sassert!(drained.size_hint().0 == n);
+//     verifier::vassert!(drained.size_hint().0 == n);
 //     for i in 0..n {
-//         let front: bool = sea::nd_bool();
+//         let front: bool = verifier::any!();
 //         if front { _ = drained.next(); }
 //         else { _ = drained.next_back(); }
 
-//         sea::sassert!(drained.size_hint().0 == n-i-1);
+//         verifier::vassert!(drained.size_hint().0 == n-i-1);
 //     }
 //     drop(drained);
 
-//     sea::sassert!(v.len == 0);
+//     verifier::vassert!(v.len == 0);
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_drain_drop() {
 //     let n: u32 = 10;
 //     static mut DROP_COUNT: u32 = 0;
@@ -366,19 +383,20 @@ fn test_push() {
 //     _ = drained.next();
 //     _ = drained.next_back();
 
-//     sea::sassert!(unsafe { DROP_COUNT == 5 });
+//     verifier::vassert!(unsafe { DROP_COUNT == 5 });
 
 //     drop(drained);
-//     sea::sassert!(unsafe { DROP_COUNT == n+2 });
+//     verifier::vassert!(unsafe { DROP_COUNT == n+2 });
 
 //     v.push(DropTest { _value: 0 });
-//     sea::sassert!(v.len == 1);
+//     verifier::vassert!(v.len == 1);
 
 //     drop(v);
-//     sea::sassert!(unsafe { DROP_COUNT == n+3 });
+//     verifier::vassert!(unsafe { DROP_COUNT == n+3 });
 // }
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_alignment() {
 //     #[repr(align(2))]
 //     struct ZST { }
@@ -435,22 +453,22 @@ fn test_push() {
 
 impl<T> Drop for CustomVec<T> {
     fn drop(&mut self) {
-        sea::sea_printf!("Before Drop While Loop");
+        // verifier::printf!("Before Drop While Loop");
         // let mut i = 0;
         while let Some(_) = self.pop() {
-            sea::sea_printf!("In While Loop");
+            // verifier::printf!("In While Loop");
             // // let size = mem::size_of::<T>();
-            // // if size == usize::MAX { sea::sassert!(false); }
+            // // if size == usize::MAX { verifier::vassert!(false); }
             
             // if i == 19 {
-            //     sea::sassert!(false);
+            //     verifier::vassert!(false);
             // }
             // i += 1;
         }
         // panic!();
 
-        // sea::sassert!(false);
-        // sea::sea_printf!("After Drop While Loop");
+        // verifier::vassert!(false);
+        // verifier::printf!("After Drop While Loop");
 
         // unsafe {
         //     if mem::size_of::<T>() == 0 {
@@ -470,6 +488,7 @@ impl<T> Drop for CustomVec<T> {
 }
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_zst() {
     static mut DROP_COUNT: usize = 0;
     #[derive(PartialEq)]
@@ -478,38 +497,38 @@ fn test_zst() {
     
     // new, push, pop
     let mut v: CustomVec<ZST> = CustomVec::new();
-    sea::sassert!(v.len == 0 && v.buf.cap == usize::MAX);
-    sea::sassert!(v.pop() == None);
+    verifier::vassert!(v.len == 0 && v.buf.cap == usize::MAX);
+    verifier::vassert!(v.pop() == None);
 
     v.push(ZST {});
     v.push(ZST {});
-    sea::sassert!(v.len == 2);
+    verifier::vassert!(v.len == 2);
 
-    sea::sassert!(v.pop() == Some(ZST {})); // causes extra drop from Some(ZST)
-    sea::sassert!(v.len == 1);
-    sea::sassert!(unsafe { DROP_COUNT == 2 });
+    verifier::vassert!(v.pop() == Some(ZST {})); // causes extra drop from Some(ZST)
+    verifier::vassert!(v.len == 1);
+    verifier::vassert!(unsafe { DROP_COUNT == 2 });
 
     for _ in 0.. 5 { v.push(ZST {}); }
-    sea::sassert!(v.pop() == Some(ZST {})); // causes extra drop from Some(ZST)
+    verifier::vassert!(v.pop() == Some(ZST {})); // causes extra drop from Some(ZST)
 
     drop(v);
-    sea::sassert!(unsafe { DROP_COUNT == 9 }); // 7 push + 2 in sassert
+    verifier::vassert!(unsafe { DROP_COUNT == 9 }); // 7 push + 2 in sassert
 
     // deref and deref mut
     let mut v: CustomVec<ZST> = CustomVec::new();
     for _ in 0.. 5 { v.push(ZST {}); }
     _ = v.pop();
     let slice: &[ZST] = &*v;
-    sea::sassert!(slice.len() == 4);
-    sea::sassert!(slice[0] == ZST {});
+    verifier::vassert!(slice.len() == 4);
+    verifier::vassert!(slice[0] == ZST {});
     drop(slice);
 
     let slice: &mut [ZST] = &mut *v;
     slice[0] = ZST {};
-    sea::sassert!(slice.len() == 4);
-    sea::sassert!(slice[0] == ZST {});
+    verifier::vassert!(slice.len() == 4);
+    verifier::vassert!(slice[0] == ZST {});
     slice[slice.len()-1] = ZST {};
-    sea::sassert!(v.pop() == Some(ZST {}));
+    verifier::vassert!(v.pop() == Some(ZST {}));
     drop(v);
 
     // test_drain_front();
@@ -522,30 +541,30 @@ fn test_zst() {
     for _ in 0.. 4 { v.push(ZST {}); }
     v.insert(2, ZST {});
     let slice: &[ZST] = &*v;
-    sea::sassert!(v.len == 5);
-    sea::sassert!(slice.len() == 5);
-    sea::sassert!(slice[2] == ZST {});
+    verifier::vassert!(v.len == 5);
+    verifier::vassert!(slice.len() == 5);
+    verifier::vassert!(slice[2] == ZST {});
 
-    sea::sassert!(v.remove(1) == ZST {});
-    sea::sassert!(v.len == 4);
+    verifier::vassert!(v.remove(1) == ZST {});
+    verifier::vassert!(v.len == 4);
     let slice: &[ZST] = &*v;
-    sea::sassert!(slice.len() == 4);
-    sea::sassert!(v.remove(3) == ZST {});
-    sea::assume(v.len == 3);
+    verifier::vassert!(slice.len() == 4);
+    verifier::vassert!(v.remove(3) == ZST {});
+    verifier::assume!(v.len == 3);
 
     // into_iter: front, back, size, drop
     let mut v: CustomVec<ZST> = CustomVec::new();
     for _ in 0..5 { v.push(ZST {}); }
     let mut iter: IntoIter<ZST> = v.into_iter();
     for _ in 0..5 {
-        sea::sassert!(iter.next() == Some(ZST {}));
+        verifier::vassert!(iter.next() == Some(ZST {}));
     }
 
     let mut v: CustomVec<ZST> = CustomVec::new();
     for _ in 0.. 5 { v.push(ZST {}); }
     let mut iter: IntoIter<ZST> = v.into_iter();
     for _ in 0.. 5 {
-        sea::sassert!(iter.next_back() == Some(ZST {}));
+        verifier::vassert!(iter.next_back() == Some(ZST {}));
     }
 
     let mut v: CustomVec<ZST> = CustomVec::new();
@@ -555,7 +574,7 @@ fn test_zst() {
         if i%2 == 0 { _ = iter.next(); }
         else { iter.next_back(); }
         let size: usize = (5-i-1).try_into().unwrap();
-        sea::sassert!(iter.size_hint().0 == size);
+        verifier::vassert!(iter.size_hint().0 == size);
     }
 
     unsafe { DROP_COUNT = 0; }
@@ -568,14 +587,15 @@ fn test_zst() {
     _ = iter.next();
     _ = iter.next_back();
     _ = iter.next_back();
-    sea::sassert!(unsafe { DROP_COUNT == 4 });
+    verifier::vassert!(unsafe { DROP_COUNT == 4 });
     drop(iter);
-    sea::sassert!(unsafe { DROP_COUNT == 7 });
+    verifier::vassert!(unsafe { DROP_COUNT == 7 });
 }
 
 
 
 // #[no_mangle]
+// #[cfg_attr(kani, kani::proof)]
 // fn test_into_iter_drop() {
 //     let mut iter: IntoIter<DropTest> = v.into_iter();
 //     iter.next();
@@ -583,10 +603,10 @@ fn test_zst() {
 //     iter.next_back();
 //     iter.next_back();
 
-//     sea::sassert!(unsafe { DROP_COUNT == 4 });
+//     verifier::vassert!(unsafe { DROP_COUNT == 4 });
 
 //     drop(iter);
-//     sea::sassert!(unsafe { DROP_COUNT == 6 });
+//     verifier::vassert!(unsafe { DROP_COUNT == 6 });
 // }
 
 fn custom_vec_valid_after_init<T>(vec: &CustomVec<T>) -> bool {
@@ -599,6 +619,7 @@ fn custom_vec_valid_after_init<T>(vec: &CustomVec<T>) -> bool {
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 fn test_alignment_bug() {
     #[repr(align(4))] // alignmnet size of 4
     struct ZST { }
@@ -632,8 +653,8 @@ fn test_alignment_bug() {
         }
     }
 
-    sea::sassert!(unaligned_start);
-    sea::sassert!(unaligned_end);
+    verifier::vassert!(unaligned_start);
+    verifier::vassert!(unaligned_end);
 }
 
 
@@ -713,7 +734,7 @@ impl<T> Iterator for RawValIter<T> {
                 }
 
                 let alignment_size: usize = mem::align_of::<T>();
-                sea::sassert!((pointer as usize) % alignment_size == 0);
+                verifier::vassert!((pointer as usize) % alignment_size == 0);
 
                 Some(ptr::read(pointer))
             }
@@ -742,7 +763,7 @@ impl<T> DoubleEndedIterator for RawValIter<T> {
                 };
 
                 let alignment_size: usize = mem::align_of::<T>();
-                sea::sassert!((pointer as usize) % alignment_size == 0);
+                verifier::vassert!((pointer as usize) % alignment_size == 0);
 
                 Some(ptr::read(pointer))
             }

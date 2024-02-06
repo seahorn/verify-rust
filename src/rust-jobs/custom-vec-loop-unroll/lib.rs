@@ -14,9 +14,9 @@
 
 
 
-#![no_std]
+#![cfg_attr(not(kani), no_std)]
 
-use sea;
+use verifier;
 
 extern crate alloc;
 use alloc::alloc::{Layout, alloc, dealloc, realloc, handle_alloc_error};
@@ -32,18 +32,20 @@ pub extern "C" fn entrypt() {
     test_push();
 
     // When running properly, the line below should give sat when used as the assertion is always false
-    // if not, keep adding more sea::sassert!(false) throughout the code until you find where SeaHorn stop analyzing
+    // if not, keep adding more verifier::vassert!(false) throughout the code until you find where SeaHorn stop analyzing
     // You can also try different versions of the Drop methods for CustomVec and RawVec to fix the issue
-    // sea::sassert!(false);
+    // verifier::vassert!(false);
 }
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+// #[cfg_attr(kani, kani::unwind(11))]
 fn test_push() {
     // Note that this code is for demonstration purposes only
 
-    let original: usize = sea::nd_usize();
-    sea::assume(original > 0 && original <= 10);
+    let original: usize = verifier::any!();
+    verifier::assume!(original > 0 && original <= 10);
 
     let mut v: CustomVec<usize> = CustomVec::new();
 
@@ -52,8 +54,8 @@ fn test_push() {
 
     v.buf.grow();
     v.push(0);   
-    sea::sassert!(v.len == original + 1);
-    sea::sassert!(v.cap() == original * 2);
+    verifier::vassert!(v.len == original + 1);
+    verifier::vassert!(v.cap() == original * 2);
 }
 
 
@@ -66,9 +68,9 @@ impl<T> Drop for CustomVec<T> {
 
         // Version 2: Remember to update Drop for RawVec
         // This should work without the unroll bound, up to a limit
-        // sea::sea_printf!("Before Loop");
+        // verifier::printf!("Before Loop");
         // while let Some(_) = self.pop() {
-            // sea::sea_printf!("During Loop");
+            // verifier::printf!("During Loop");
         // }
 
 

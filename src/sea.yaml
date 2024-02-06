@@ -39,7 +39,7 @@ verify_options:
   '-S': ''
 # keep intermediate results for debugging 
   keep-temps: ''
-  temp-dir: /tmp/c-rust
+  temp-dir: /tmp/c-rust-sid
 # time and result stats
   horn-stats: true
 # Promote defined verifier fns

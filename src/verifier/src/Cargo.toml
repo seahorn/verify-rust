@@ -1,0 +1,25 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "verifier"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "verifier"
+crate-type = ["lib"]
+path = "lib.rs"
+
+
+[features]
+default = ["sea_no_std"]
+std = ["sea_std"]
+no_std = ["sea_no_std"]
+panic_error = ["sea_panic_error"]
+
+[dependencies]
+cfg-if = "0.1.10"
+sea_std = { package = "sea", path = "../../sea-lib", default-features = false, features = ["std"], optional = true }
+sea_no_std = { package = "sea", path = "../../sea-lib", default-features = false, features = [], optional = true }
+sea_panic_error = { package = "sea", path = "../../sea-lib", default-features = false, features = ["panic_error"], optional = true }
+

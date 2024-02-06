@@ -1,6 +1,6 @@
-// #![no_std]
+// #![cfg_attr(not(kani), no_std)]
 
-// use sea;
+// use verifier;
 
 // extern crate alloc;
 // use alloc::vec::Vec;
@@ -8,6 +8,7 @@
 
 
 #[no_mangle]
+#[cfg_attr(kani, kani::proof)]
 pub extern "C" fn entrypt() {
     let mut reader: &[u8] = b"hello";
     let mut writer: Vec<u8> = vec![];
