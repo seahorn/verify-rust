@@ -9,7 +9,8 @@ function(c_rust_llvm TARGET SRC_FILES)
 
     # XXX all Rust libraries are loaded together from the workspace
     corrosion_import_crate(MANIFEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml 
-                           CRATES ${RUST_LIB_TARGET})
+                           CRATES ${RUST_LIB_TARGET}
+                           PROFILE dev-seahorn)
 
 
     # build std library; require panic to abort without printing anything

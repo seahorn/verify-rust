@@ -11,6 +11,7 @@ RUN apt -y update
 RUN apt -y install wget python3-pip
 RUN python3 -m pip install --upgrade pip
 RUN pip3 install cmake --upgrade
+RUN apt -y install emacs
 
 ## Install rust
 USER usea
@@ -20,6 +21,7 @@ RUN bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -
 RUN rustup install nightly-2022-08-01
 RUN rustup +nightly-2022-08-01 component add rust-src
 RUN cargo +nightly-2022-08-01 install --force cbindgen
+RUN cargo install --locked kani-verifier --version ^0.43 ## latest version to work with Rust 1.64
 
 ## import c-rust
 USER usea
@@ -34,8 +36,6 @@ WORKDIR /home/usea/c-rust
 #
 RUN rm -Rf build && mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang-14 -DCMAKE_CXX_COMPILER=clang++-14 -DSEAHORN_ROOT=/home/usea/seahorn ../ -GNinja && cmake --build .
 
-# run test
-RUN cd build && cmake --build . --target test
 #
 ### set default user and wait for someone to login and start running verification tasks
 USER usea

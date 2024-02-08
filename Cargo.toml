@@ -10,6 +10,9 @@ members = [
 panic = "abort"
 opt-level = 2
 
+
+[profile.dev-seahorn]
+inherits="dev"
 rustflags = [
    "-Clinker-plugin-lto", 
    "-Clinker=clang-14",
@@ -21,6 +24,8 @@ rustflags = [
 panic = "abort"
 opt-level = 2
 
+[profile.release-seahorn]
+inherits="release"
 rustflags = [
    "-Clinker-plugin-lto", 
    "-Clinker=clang-14",
