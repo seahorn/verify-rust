@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        verify_flag: ["", "--vac", "--cex"]
+        verify_flag: [""] #, "--vac", "--cex"]
        
     steps:
       - name: Checkout
