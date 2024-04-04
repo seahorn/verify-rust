@@ -30,6 +30,7 @@
         "result-transpose",
         "result-unwrap_or_else",
         "sea-vec",
+        "mock-test1",
         "serde",
         "smallvec",
         "smallvec-allocation",
