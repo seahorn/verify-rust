@@ -3,36 +3,39 @@
 use verifier;
 use seamock::seamock;
 
-// TODO: move this enum into the library
-enum WithVal<T> {
-    Gt(T),
-    Gte(T),
-    Lt(T),
-    Lte(T),
-    Eq(T),
-}
-
 #[seamock]
 pub trait Test {
-    fn a(&self, z: bool, a: i32) -> i32;
+    fn a(&self, x: i32, y: bool) -> i32;
     fn b(&self) -> u8;
     fn c(&self) -> i32;
 }
 
+fn test<T: Test>(mock_test: &T, x: i32, y: bool) -> i32 {
+    let ans = mock_test.a(x, y);
+    mock_test.b();
+    mock_test.c();
+    return ans;
+}
+
 #[no_mangle]
 pub extern "C" fn entrypt() {
-    let mut x: MockTest = MockTest::new();
-	let mut y: i32 = verifier::any!();
-    let mut z: bool = verifier::any!();
+    let mut mock: MockTest = MockTest::new();
+	let mut x: i32 = verifier::any!();
+    let mut y: bool = verifier::any!();
 
-    verifier::assume!(y < 10);
+    verifier::assume!(x < 10);
 
-    x
+    mock
         .times_a(2)
-        .returning_a(|z, a| a + 6)
-        .returning_b(|| 4)
-        .times_b(2);
+        .times_b(2)
+        .times_c(1)
+        .returning_a(|x, y| x + 5)
+        .returning_b(|| 4);
     
-    // verifier::vassert!(y == x.c());
-    verifier::vassert!(x.a(z, y) < 15);
+    verifier::vassert!(mock.a(x, y) < 15);
+    verifier::vassert!(mock.b() == 4);
+    verifier::vassert!(test(&mock, x, y) < 15);
+    verifier::vassert!(mock.expect_times_a(2));
+    verifier::vassert!(mock.expect_times_b(2));
+    verifier::vassert!(mock.expect_times_c(1));
 }
