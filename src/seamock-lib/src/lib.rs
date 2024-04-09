@@ -152,37 +152,10 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
         let ret_func = Ident::new(&format!("val_returning_{}", &method.sig.ident), method.sig.ident.span());
         let method_name_string =  &method.sig.ident.to_string();
 
-        // TODO: generate code to check parameter values are correct
-        // let x = if !method_inputs.is_empty() {
-        //     Some(quote! {
-        //         match self.#val_attr {
-        //             Some(x) => {
-        //
-        //                 assert!(val > z);
-        //             }
-        //             Some(WithVal::Gte(val)) {
-        //                 assert!(val >= z);
-        //             }
-        //             Some(WithVal::Eq(val)) => {
-        //                 assert_eq!(val, z);
-        //             }
-        //             None => {}
-        //             _ => {}
-        //         }
-        //     })
-        // } else {
-        //     None
-        // };
-
         Some (quote! {
             fn #method_name(#method_inputs) #method_output {
                 self.#times_attr.replace_with(|&mut old| old + 1);
-                // sassert
-                // verifier error
-                if *self.#times_attr.borrow() > self.#max_times_attr {
-                    // panic!("{} called more than {} times", #method_name_string, self.#max_times_attr);
-                }
-                // #x
+                // verifier::vassert!(*self.#times_attr.borrow() <= self.#max_times_attr)
                 (self.#ret_func)(#(#params)*)
             }
         })
@@ -210,6 +183,7 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
     let max_times_clone = max_times.clone();
 
     // Implement the trait for MockContext
+    let trait_original = &input.ident;
     let mock_impl = quote! {
         impl #mock_struct_name {
             pub fn new() -> Self {
@@ -232,6 +206,12 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
             #(#with_methods)*
             #(#times_methods)*
             #(#expect_times_methods)*
+            // #(#methods_impl)*
+        }
+    };
+
+    let trait_impl = quote! {
+        impl #trait_original for #mock_struct_name {
             #(#methods_impl)*
         }
     };
@@ -239,9 +219,17 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
     // Combine the generated tokens
     let expanded = quote! {
         use core::cell::RefCell;
+        enum WithVal<T> {
+            Gt(T),
+            Gte(T),
+            Lt(T),
+            Lte(T),
+            Eq(T),
+        }
         #input
         #mock_struct
         #mock_impl
+        #trait_impl
     };
 
 
