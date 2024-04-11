@@ -1,6 +1,7 @@
 #![cfg_attr(not(kani), no_std)]
 
 use verifier;
+use sea;
 use seamock::seamock;
 
 #[seamock]

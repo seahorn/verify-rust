@@ -149,11 +149,15 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
         let times_attr = Ident::new(&format!("times_{}", &method.sig.ident), method.sig.ident.span());
         let max_times_attr = Ident::new(&format!("max_times_{}", &method.sig.ident), method.sig.ident.span());
         let ret_func = Ident::new(&format!("val_returning_{}", &method.sig.ident), method.sig.ident.span());
+        let error = format!("Hit times limit for {}", &method.sig.ident);
 
         Some (quote! {
             fn #method_name(#method_inputs) #method_output {
                 self.#times_attr.replace_with(|&mut old| old + 1);
-                verifier::vassert!(*self.#times_attr.borrow() <= self.#max_times_attr);
+                if (*self.#times_attr.borrow() > self.#max_times_attr) {
+                    sea::sea_printf!(#error, self.#max_times_attr);
+                    verifier::vassert!(false);
+                }
                 (self.#ret_func)(#(#params)*)
             }
         })
