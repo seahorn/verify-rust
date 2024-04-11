@@ -148,14 +148,12 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
 
         let times_attr = Ident::new(&format!("times_{}", &method.sig.ident), method.sig.ident.span());
         let max_times_attr = Ident::new(&format!("max_times_{}", &method.sig.ident), method.sig.ident.span());
-        let val_attr = Ident::new(&format!("val_with_{}", &method.sig.ident), method.sig.ident.span());
         let ret_func = Ident::new(&format!("val_returning_{}", &method.sig.ident), method.sig.ident.span());
-        let method_name_string =  &method.sig.ident.to_string();
 
         Some (quote! {
             fn #method_name(#method_inputs) #method_output {
                 self.#times_attr.replace_with(|&mut old| old + 1);
-                // verifier::vassert!(*self.#times_attr.borrow() <= self.#max_times_attr)
+                verifier::vassert!(*self.#times_attr.borrow() <= self.#max_times_attr);
                 (self.#ret_func)(#(#params)*)
             }
         })
@@ -206,7 +204,6 @@ pub fn seamock(_args: TokenStream, input: TokenStream) -> TokenStream {
             #(#with_methods)*
             #(#times_methods)*
             #(#expect_times_methods)*
-            // #(#methods_impl)*
         }
     };
 

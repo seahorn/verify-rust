@@ -20,8 +20,8 @@ fn test<T: Test>(mock_test: &T, x: i32, y: bool) -> i32 {
 #[no_mangle]
 pub extern "C" fn entrypt() {
     let mut mock: MockTest = MockTest::new();
-	let mut x: i32 = verifier::any!();
-    let mut y: bool = verifier::any!();
+	let x: i32 = verifier::any!();
+    let y: bool = verifier::any!();
 
     verifier::assume!(x < 10);
 
@@ -29,7 +29,7 @@ pub extern "C" fn entrypt() {
         .times_a(2)
         .times_b(2)
         .times_c(1)
-        .returning_a(|x, y| x + 5)
+        .returning_a(|x, _y| x + 5)
         .returning_b(|| 4);
     
     verifier::vassert!(mock.a(x, y) < 15);
