@@ -34,7 +34,7 @@ COPY --chown=usea:usea . c-rust
 #
 WORKDIR /home/usea/c-rust
 #
-RUN rm -Rf build && mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang-14 -DCMAKE_CXX_COMPILER=clang++-14 -DSEAHORN_ROOT=/home/usea/seahorn ../ -GNinja && cmake --build .
+RUN rm -Rf build && mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang-14 -DCMAKE_CXX_COMPILER=clang++-14 -DSEAHORN_ROOT=/home/usea/seahorn -DRust_COMPILER=$(rustup which rustc) -DRust_CARGO=$(rustup which cargo)  ../ -GNinja && cmake --build .
 
 #
 ### set default user and wait for someone to login and start running verification tasks
