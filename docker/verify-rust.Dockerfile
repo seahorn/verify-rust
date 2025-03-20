@@ -20,7 +20,7 @@ WORKDIR /home/usea
 RUN bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none"
 RUN rustup install nightly-2022-08-01
 RUN rustup +nightly-2022-08-01 component add rust-src
-RUN cargo +nightly-2022-08-01 install --force cbindgen
+RUN cargo +nightly-2022-08-01 install --locked --force cbindgen --version ^0.26
 RUN cargo install --locked kani-verifier --version ^0.43 ## latest version to work with Rust 1.64
 
 ## import c-rust

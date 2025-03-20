@@ -7,7 +7,7 @@ name = "add-lib"
 version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -79,7 +79,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -90,7 +90,7 @@ dependencies = [
  "ahash",
  "borsh",
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -100,7 +100,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -110,7 +110,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -131,7 +131,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -159,7 +159,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -188,7 +188,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "custom-print 0.1.0",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -198,7 +198,7 @@ version = "0.1.0"
 dependencies = [
  "custom-print 0.1.0",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -209,7 +209,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "custom-print 0.1.0",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -219,7 +219,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -229,7 +229,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -239,7 +239,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -249,7 +249,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -259,7 +259,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -269,7 +269,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -279,7 +279,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -289,7 +289,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -357,7 +357,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "seamock",
  "verifier",
 ]
@@ -368,7 +368,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -384,7 +384,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -394,7 +394,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -404,7 +404,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -414,7 +414,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -424,7 +424,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -434,7 +434,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -444,7 +444,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -454,7 +454,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -464,7 +464,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -501,7 +501,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -511,7 +511,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -521,7 +521,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -531,7 +531,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -541,7 +541,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -551,7 +551,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -561,7 +561,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -571,7 +571,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -581,7 +581,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -591,7 +591,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -622,16 +622,9 @@ version = "0.1.0"
 dependencies = [
  "custom-print 1.0.0",
  "libc",
- "sea 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sea_nd_func",
  "unroll",
 ]
-
-[[package]]
-name = "sea"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6dd669e5f0d27f8ab4e50ce65c6032c2be11554b3abe77b5f100955531cb7f4"
 
 [[package]]
 name = "sea-vec-lib"
@@ -639,7 +632,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -693,7 +686,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "heapless",
  "libc",
- "sea 0.1.0",
+ "sea",
  "serde",
  "serde-json-core",
  "verifier",
@@ -722,7 +715,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -732,7 +725,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -743,7 +736,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -754,7 +747,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -764,7 +757,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -775,7 +768,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -786,7 +779,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -797,7 +790,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -807,7 +800,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -817,7 +810,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -827,7 +820,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -837,7 +830,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -847,7 +840,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "smallvec",
  "verifier",
 ]
@@ -858,7 +851,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -883,7 +876,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -893,7 +886,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -903,7 +896,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -947,7 +940,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "tinyvec 1.6.0",
  "verifier",
 ]
@@ -958,7 +951,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "tinyvec 1.6.0",
  "verifier",
 ]
@@ -969,7 +962,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "tinyvec 0.2.0",
  "verifier",
 ]
@@ -1005,7 +998,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -1014,7 +1007,7 @@ name = "vec-lib"
 version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -1023,7 +1016,7 @@ name = "vec-sort-reverse-lib"
 version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
  "verifier",
 ]
 
@@ -1032,7 +1025,7 @@ name = "verifier"
 version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
- "sea 0.1.0",
+ "sea",
 ]
 
 [[package]]
