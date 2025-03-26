@@ -14,8 +14,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        verify_flag: [""] #, "--vac", "--cex"]
-       
+        verify_flag: ["", "--vac", "--cex"]
+        include:
+          - verify_flag: ""
+            blacklist: "df-coi"
+          - verify_flag: "--vac"
+            blacklist: "vac"
+          - verify_flag: "--cex"
+            blacklist: "cex"
+            
     steps:
       - name: Checkout
         uses: actions/checkout@master
