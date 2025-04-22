@@ -1,6 +1,6 @@
 #![cfg_attr(not(kani), no_std)]
 use verifier;
-use sea::{ SeaVec, sea_vec };
+use seavec::{ SeaVec, sea_vec };
 
 
 #[no_mangle]
@@ -22,6 +22,7 @@ pub extern "C" fn entrypt() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(6))]
 fn test_drop() {
     static mut DROP_COUNT: usize = 0;
     struct DropTest { _x: usize }
@@ -40,6 +41,7 @@ fn test_drop() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(8))]
 fn test_macros() {
     let mut v: SeaVec<i32> = sea_vec![1, 2, 3, 4];
     verifier::vassert!(v.len() == 4);
@@ -68,6 +70,7 @@ fn test_macros() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(20))]
 fn test_push_pop() {
     let mut v: SeaVec<usize> = SeaVec::new(10);
     for i in 0..10 {
@@ -86,6 +89,7 @@ fn test_push_pop() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(10))]
 fn test_indexing() {
     let mut v: SeaVec<usize> = sea_vec![0, 1, 2, 3, 4, 5];
     for i in 0..6 {
@@ -98,6 +102,7 @@ fn test_indexing() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(8))]
 fn test_deref_deref_mut() {
     let mut v: SeaVec<usize> = sea_vec![0, 1, 2, 3];
 
@@ -121,6 +126,7 @@ fn test_deref_deref_mut() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(10))]
 fn test_insert_remove() {
     let mut v: SeaVec<usize> = sea_vec![0, 1, 2, 3, 4];
     v.insert(5, 5);
@@ -139,10 +145,11 @@ fn test_insert_remove() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(12))]
 fn test_iter() {
     let v: SeaVec<usize> = sea_vec![0, 1, 2, 3, 4, 5];
 
-    let mut iter: sea::IntoIter<usize> = v.into_iter();
+    let mut iter: seavec::IntoIter<usize> = v.into_iter();
     for i in 0..6 {
         if i%2 == 0 {
             verifier::vassert!(iter.next() == Some(i/2));
@@ -173,9 +180,10 @@ fn test_iter() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(12))]
 fn test_drain() {
     let mut v: SeaVec<usize> = sea_vec![0, 1, 2, 3, 4, 5];
-    let mut drain: sea::Drain<'_, usize> = v.drain(0..6);
+    let mut drain: seavec::Drain<'_, usize> = v.drain(0..6);
     for i in 0..6 {
         if i%2 == 0 { verifier::vassert!(drain.next() == Some(i/2)); }
         else { verifier::vassert!(drain.next_back() == Some(5-i/2)); }
@@ -193,7 +201,7 @@ fn test_drain() {
     let mut v: SeaVec<DropTest> = SeaVec::new(cap);
     for i in 0..4 { v.push(DropTest { x: i }); }
 
-    let mut drain: sea::Drain<'_, DropTest> = v.drain(1..3);
+    let mut drain: seavec::Drain<'_, DropTest> = v.drain(1..3);
     verifier::vassert!(drain.next().unwrap().x == 1);
     verifier::vassert!(drain.size_hint() == (1, Some(1)));
     verifier::vassert!(unsafe { DROP_COUNT == 1 });
@@ -211,6 +219,7 @@ fn test_drain() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(6))]
 fn test_zst() {
     static mut DROP_COUNT: usize = 0;
     #[derive(PartialEq)]
@@ -232,7 +241,7 @@ fn test_zst() {
     v.insert(0, ZST {});
     verifier::vassert!(unsafe { DROP_COUNT == 3 });
 
-    let mut iter: sea::IntoIter<ZST> = v.into_iter();
+    let mut iter: seavec::IntoIter<ZST> = v.into_iter();
     verifier::vassert!(iter.next() == Some(ZST {})); // checking for equivalence increases drop count by one
     verifier::vassert!(iter.size_hint().0 == 2);
     verifier::vassert!(iter.next_back() == Some(ZST {})); // checking for equivalence increases drop count by one

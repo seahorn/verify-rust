@@ -1,3 +1,3 @@
 c_rust_llvm(sea-vec sea-vec.c CUSTOM_PANIC_NO_STD)
-
-sea_add_unsat_test(sea-vec)
+configure_file(sea.yaml sea.yaml @ONLY)
+sea_discover_tests(sea-vec)

@@ -12,13 +12,14 @@ path = "lib.rs"
 [dependencies]
 libc = "0.2"
 cfg-if = "0.1.10"
+seavec = {path = "../../lib/seavec"}
 
 [dependencies.verifier]
 path = "../../verifier/src"
 default-features = false
 features = ["panic_error"]
 
-[dependencies.sea]
+[target.'cfg(not(kani))'.dependencies.sea]
 path = "../../sea-lib"
 default-features = false
 features = ["panic_error"]
