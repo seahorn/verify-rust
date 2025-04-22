@@ -5,6 +5,7 @@ use verifier;
 pub extern "C" fn entrypt() {
     let x = verifier::any!();
     verifier::assume!(x < i32::MAX/2);
+    verifier::assume!(x > i32::MIN/2);
     let res = iter_mut(x);
     if x >= 0 {
         verifier::vassert!(res == x);

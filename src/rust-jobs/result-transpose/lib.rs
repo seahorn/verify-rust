@@ -9,6 +9,7 @@ use verifier;
 pub extern "C" fn entrypt() {
     let v: i32 = verifier::any!();
     verifier::assume!(v < i32::MAX/2);
+    verifier::assume!(v > i32::MIN/2);
 
     let x: Result<Option<i32>, String> = Ok(Some(v));
     let y: Option<Result<i32, String>> = Some(Ok(v));

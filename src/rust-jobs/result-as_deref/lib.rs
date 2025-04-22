@@ -12,6 +12,7 @@ use verifier;
 pub extern "C" fn entrypt() {
     let v: i32 = verifier::any!();
     verifier::assume!(v < i32::MAX/2);
+    verifier::assume!(v > i32::MIN/2);
 
     let x: Result<String, i32> = Err(v);
     let y: Result<&str, &i32> = Err(&v);
@@ -25,8 +26,6 @@ pub extern "C" fn entrypt() {
         Err(err) => *err,
         _ => 0,
     };
-
     let result: i32 = x_error + y_error;
-
     verifier::vassert!(result == v*2);
 }

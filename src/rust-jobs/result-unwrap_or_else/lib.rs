@@ -3,10 +3,17 @@ pub use verifier;
 
 extern crate alloc;
 use alloc::string::String;
-
 #[no_mangle]
-// #[cfg_attr(kani, kani::proof)]
-pub extern "C" fn unwrap_or_else(x: i32, y: i32) -> i32 {
+#[cfg_attr(kani, kani::proof)]
+fn entrypt() {
+    let x: i32   = verifier::any!();
+    let y: i32 = verifier::any!();
+    verifier::assume!(y == 0);
+    let mut res = unwrap_or_else(x, y);
+    verifier::vassert!(res == -1);
+}
+
+fn unwrap_or_else(x: i32, y: i32) -> i32 {
     let result: Result<i32, String> = divide_result(x, y);
 
     let value: i32 = result.unwrap_or_else(|_| {
