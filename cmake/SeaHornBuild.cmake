@@ -126,10 +126,21 @@ function(sea_add_unsat_test TARGET)
   add_test(NAME "${TARGET}_unsat_test" COMMAND ${VERIFY_CMD} ${VERIFY_FLAGS} --expect=unsat ${BC})
 endfunction()
 
+# Run unit proof, expecting unsat
+function(sea_add_unsat_test_novac TARGET)
+  sea_get_file_name(BC ${TARGET}.ir)
+  add_test(NAME "${TARGET}_unsat_test" COMMAND ${VERIFY_CMD} ${VERIFY_FLAGS} --expect=unsat ${BC})
+  set_tests_properties("${TARGET}_unsat_test" PROPERTIES LABELS "skipvac") 
+endfunction()
+
+
 # Run unti proof, expecting sat
 function(sea_add_sat_test TARGET)
   sea_get_file_name(BC ${TARGET}.ir)
   add_test(NAME "${TARGET}_sat_test" COMMAND ${VERIFY_CMD} ${VERIFY_FLAGS} --expect=sat ${BC})
+  # vacuity tests report sat as failure so skip them
+  # 
+  set_tests_properties("${TARGET}_sat_test" PROPERTIES LABELS "skipvac")
 endfunction()
 
 function(sea_disable_unsat_test TARGET)
