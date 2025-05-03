@@ -22,7 +22,7 @@ features = ["no_std"]
 version = "1.10.0"
 features = ["const_new"]
 
-[dependencies.sea]
+[target.'cfg(not(kani))'.dependencies.sea]
 path = "../../sea-lib"
 default-features = false
 features = []
