@@ -21,7 +21,7 @@ features = ["panic_error"]
 [dependencies.sea]
 path = "../../sea-lib"
 default-features = false
-features = ["panic_error"]
+features = []
 
 [features]
 default = []  # Specify other default features here, if any
