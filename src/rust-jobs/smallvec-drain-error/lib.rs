@@ -2003,5 +2003,6 @@ pub extern "C" fn entrypt() {
     let _ = v.drain(..=usize::MAX);
 
     // This assertion will only be reached if the previous operation doesn't panic.
+    // We expect this to reachable (in bad version) so don't use verifier::error!()
     verifier::vassert!(false);
 }
