@@ -1,0 +1,16 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "seavec"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib"]
+path = "src/lib.rs"
+
+[dependencies]
+libc = "0.2"
+
+[features]
+default = []  # Specify other default features here, if any        
