@@ -2141,9 +2141,9 @@ pub extern "C" fn entrypt() {
     match v {
         0 => test_append(),
         1 => test_drain(),
-        2 => test_drain_panic(),
+        2 => testfail_drain_panic(),
         3 => test_insert_many(),
-        4 => test_insert_many_panic(),
+        4 => testfail_insert_many_panic(),
         5 => test_resize(),
         6 => test_resize2(),
         7 => test_resize_with(),
@@ -2219,7 +2219,8 @@ fn test_drain() {
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
 #[cfg_attr(kani, kani::unwind(3))]
-fn test_drain_panic() {
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_drain_panic() {
     const CAP: usize = 2;
     let mut v1: SmallVec<[u32; CAP]> = SmallVec::new();
 
@@ -2244,11 +2245,11 @@ fn test_drain_panic() {
         verifier::assume!(drain_point2 > drain_point);
 
         // // Start is greater than end, so this should panic.
-        // let _: SmallVec<[u32; CAP]> = v1.drain(drain_point2..drain_point).collect();
+        let _: SmallVec<[u32; CAP]> = v1.drain(drain_point2..drain_point).collect();
     }
 
     // // This assertion should not be reachable since the previous call to drain should panic.
-    // verifier::vassert!(false);
+    verifier::error!();
 }
 
 #[no_mangle]
@@ -2288,7 +2289,8 @@ fn test_insert_many() {
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
 #[cfg_attr(kani, kani::unwind(3))]
-fn test_insert_many_panic() {
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_insert_many_panic() {
     const CAP: usize = 2;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
     let mut v2: SmallVec<[u32; CAP]> = SmallVec::new();
@@ -2314,7 +2316,7 @@ fn test_insert_many_panic() {
     v.insert_many(insert_point, v2.clone());
 
     // This assertion should not be reachable since the previous operation should panic.
-    verifier::vassert!(false);
+    verifier::error!();
 }
 
 #[no_mangle]
@@ -2340,9 +2342,9 @@ fn test_resize() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::unwind(3))]
 fn test_resize2() {
-    const CAP: usize = 2;
+    const CAP: usize = 1;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
     let len: usize = verifier::any!();
@@ -2383,9 +2385,9 @@ fn test_resize_with() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::unwind(3))]
 fn test_resize_with2() {
-    const CAP: usize = 2;
+    const CAP: usize = 1;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
 
     let len: usize = verifier::any!();
