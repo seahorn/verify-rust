@@ -154,6 +154,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cfg-simplify-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "copy_stack_buffer-lib"
 version = "0.1.0"
 dependencies = [
@@ -198,8 +208,6 @@ version = "0.1.0"
 dependencies = [
  "custom-print 0.1.0",
  "libc",
- "sea",
- "verifier",
 ]
 
 [[package]]
@@ -449,6 +457,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "paper-example-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "pointer-lib"
 version = "0.1.0"
 dependencies = [
@@ -633,6 +651,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "libc",
  "sea",
+ "seavec",
  "verifier",
 ]
 
@@ -651,6 +670,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "seavec"
+version = "0.1.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

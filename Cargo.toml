@@ -4,6 +4,7 @@ cargo-features = ["profile-rustflags"]
 
 members = [
     "src/rust-jobs/*",
+    "src/lib/*",
 ]
 
 [profile.dev]
