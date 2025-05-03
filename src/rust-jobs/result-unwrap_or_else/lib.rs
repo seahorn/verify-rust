@@ -9,7 +9,7 @@ fn entrypt() {
     let x: i32   = verifier::any!();
     let y: i32 = verifier::any!();
     verifier::assume!(y == 0);
-    let mut res = unwrap_or_else(x, y);
+    let res = unwrap_or_else(x, y);
     verifier::vassert!(res == -1);
 }
 
