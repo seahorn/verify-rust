@@ -2262,6 +2262,5 @@ fn test_try_grow() {
     verifier::assume!(new_cap2 < len);
 
     let result2: Result<(), CollectionAllocErr> = v.try_grow(new_cap2);
-
-    verifier::vassert!(result2.is_err());
+    verifier::error!();
 }
