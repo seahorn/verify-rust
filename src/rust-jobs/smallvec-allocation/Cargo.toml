@@ -16,7 +16,7 @@ cfg-if = "0.1.10"
 [dependencies.verifier]
 path = "../../verifier/src"
 default-features = false
-features = ["no_std"]
+features = ["panic_error"]
 
 [dependencies.sea]
 path = "../../sea-lib"
