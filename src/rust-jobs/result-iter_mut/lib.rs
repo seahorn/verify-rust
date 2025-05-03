@@ -1,3 +1,5 @@
+#![cfg_attr(not(kani), no_std)]
+
 use verifier;
 
 #[no_mangle]
