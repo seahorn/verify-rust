@@ -2243,7 +2243,7 @@ fn test_remove() {
     v.remove(0);
 
     // This assertion should not be reachable since the call to remove panics.
-    verifier::vassert!(false);
+    verifier::error!();
 }
 
 #[no_mangle]
@@ -2284,5 +2284,5 @@ fn test_swap_remove() {
     v.swap_remove(0);
 
     // This assertion should not be reachable since the call to remove panics.
-    verifier::vassert!(false);
+    verifier::error!();
 }
