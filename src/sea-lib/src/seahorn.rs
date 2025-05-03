@@ -19,11 +19,24 @@ macro_rules! sea_printf {
 #[macro_export]
 macro_rules! sassert {
     ($cond:expr) => {{
-        if !$cond {
-            sea::verifier_error();
+        // We need a verifier_assert statement to enable vacuity checking.
+        // This is a nop if vacuity is not enabled in bmc run.
+        // Note: cond may have side-effects, so we have to evaluate it only once.
+        let val = $cond.into();
+        unsafe { sea::bindings::__VERIFIER_assert(val); }
+        if !val {
+            unsafe { sea::bindings::__VERIFIER_error(); }
         }
     }};
 }
+
+#[macro_export]
+macro_rules! error {
+    () => {{
+      unsafe { sea::bindings::__VERIFIER_error(); }
+    }};
+}
+
 
 pub trait Arbitrary
 where

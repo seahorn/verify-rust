@@ -2,6 +2,7 @@
     To use specify CUSTOM_PANIC_NO_STD as a variable arg in
     the crate's cmake. For example:
     c_rust_llvm(panic-test panic-test.c ... CUSTOM_PANIC_NO_STD ...)
+    The CUSTOM_PANIC_NO_STD variable flag builds std with the custom panic handler.
     To specify behavior pass in features and add functionality
 
     When adding your own feature, make sure to update lib.rs and make

@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h> // for free
+#include <string.h> // for memset
 
 #define INLINE __attribute__((always_inline))
 
