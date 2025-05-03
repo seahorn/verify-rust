@@ -19,7 +19,7 @@ path = "../../verifier/src"
 default-features = false
 features = ["panic_error"]
 
-[dependencies.sea]
+[target.'cfg(not(kani))'.dependencies.sea]
 path = "../../sea-lib"
 default-features = false
 features = ["panic_error"]

@@ -1,9 +1,13 @@
 #![cfg_attr(not(kani), no_std)]
 
+#[cfg(not(kani))]
 use verifier;
+#[cfg(not(kani))]
 use sea;
+#[cfg(not(kani))]
 use seamock::seamock;
 
+#[cfg(not(kani))]
 #[seamock]
 pub trait Test {
     fn a(&self, x: i32, y: bool) -> i32;
@@ -11,6 +15,7 @@ pub trait Test {
     fn c(&self) -> i32;
 }
 
+#[cfg(not(kani))]
 fn test<T: Test>(mock_test: &T, x: i32, y: bool) -> i32 {
     let ans = mock_test.a(x + 5, y);
     mock_test.b();
@@ -18,10 +23,11 @@ fn test<T: Test>(mock_test: &T, x: i32, y: bool) -> i32 {
     return ans;
 }
 
+#[cfg(not(kani))]
 #[no_mangle]
 pub extern "C" fn entrypt() {
     let mut mock: MockTest = MockTest::new();
-	let x: i32 = verifier::any!();
+    let x: i32 = verifier::any!();
     let y: bool = verifier::any!();
 
     verifier::assume!(x < 10);
