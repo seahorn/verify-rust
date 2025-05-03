@@ -18,32 +18,47 @@ def load_tests():
 class kani_build_tests(rfm.CompileOnlyRegressionTest):
     build_system = 'CustomBuild'
     #test = parameter(TESTS)
+    KANI_VERSION = '0.43.0'
 
     @run_before('compile')
     def prepare_build(self):
-        #TEST_HARNESSES = get_harnesses(f'rust-jobs/{self.directory}')
-        #directory = self.test[1]
+        # add kani to path
+        self.env_vars['PATH'] = f'kani/bin/:{os.environ["PATH"]}'
+        # TODO: codegen for all passed directories
         self.build_system.commands = [
-            f'cargo kani --only-codegen --manifest-path src/rust-jobs/tinyvec-arrayvec/Cargo.toml'
+            'rm -f rust-toolchain.toml',
+            'rustup override set 1.81.0',
+            f'cargo install kani-verifier --root $PWD/kani --version {self.KANI_VERSION}',
+            f'kani/bin/cargo-kani --only-codegen --manifest-path src/rust-jobs/tinyvec-arrayvec/Cargo.toml',
+            'kani/bin/cargo-kani --version'
         ]
+
+    @sanity_function
+    def validate_version(self):
+        return sn.assert_found(rf"cargo-kani {self.KANI_VERSION}", self.stdout)
 
 class seahorn_build_tests(rfm.CompileOnlyRegressionTest):
     build_system = 'CustomBuild'
+    cxx_compiler = variable(str, value='clang++-14')
+    c_compiler = variable(str, value='clang-14')
+    seahorn_root = variable(str, value='/home/siddharth/seahorn/seahorn/build-rel/run/')
+    rust_compiler = variable(str, value='/home/siddharth/.cargo/bin/rustc')
+    rust_cargo = variable(str, value='/home/siddharth/.cargo/bin/cargo')
 
     @run_before('compile')
     def prepare_build(self):  
         self.build_system.builddir = 'rfm-build'
         self.build_system.commands = ['mkdir -p rfm-build && cd rfm-build',
-                                    ' '.join([
-                                    'cmake',
-                                    '-DCMAKE_CXX_COMPILER=clang++-14',
-                                    '-DCMAKE_C_COMPILER=clang-14',
-                                    '-DSEAHORN_ROOT=/home/siddharth/seahorn/seahorn/build-rel/run/',
-                                    '-DRust_COMPILER=/home/siddharth/.cargo/bin/rustc',
-                                    '-DRust_CARGO=/home/siddharth/.cargo/bin/cargo',
-                                    '../',
-                                    '-GNinja']),
-                                    'cmake --build .']
+                        ' '.join([
+                        'cmake',
+                        f'-DCMAKE_CXX_COMPILER={self.cxx_compiler}',
+                        f'-DCMAKE_C_COMPILER={self.c_compiler}',
+                        f'-DSEAHORN_ROOT={self.seahorn_root}',
+                        f'-DRust_COMPILER={self.rust_compiler}',
+                        f'-DRust_CARGO={self.rust_cargo}',
+                        '../',
+                        '-GNinja']),
+                        'cmake --build .']
 
 @rfm.simple_test
 class BmcProofTest(rfm.RunOnlyRegressionTest):
@@ -58,26 +73,37 @@ class BmcProofTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def prepare_test(self):
+        kani_bin_dir = f'{self.kani_build_artefacts.stagedir}/kani/bin'
+        self.env_vars['PATH'] = f'{kani_bin_dir}:{os.environ["PATH"]}'
         self.time_limit = str(self.timeout_sec) + 's'
         harness, directory = self.test
-        testname = f"{directory}_{harness}"
         if self.tool == 'kani':
-            self.executable = 'cargo'
+            self.executable = f'{self.kani_build_artefacts.stagedir}/kani/bin/cargo-kani'
             self.executable_opts = [
-                'kani', f'--harness {harness}',
+                f'--harness {harness}',
+                '--no-unwinding-checks', # for speed
+                '--no-assertion-reach-checks', # for speed
                 f'--manifest-path {self.kani_build_artefacts.stagedir}/src/rust-jobs/{directory}/Cargo.toml']
         elif self.tool == 'seahorn':
+            ctestname = f"{directory}_{harness}" if harness != 'entrypt' else directory
+            ctestname += f"_{'sat' if harness.startswith('testfail') else 'unsat'}_test"
+            # use latest ctest 3.x so that timeout is working
+            # see https://gitlab.kitware.com/cmake/cmake/-/merge_requests/8851
             self.executable = 'ctest'
             self.executable_opts = [
-                f'--test-dir {self.seahorn_build_artefacts.stagedir}/rfm-build', f'-R {testname}_unsat_test']
+                '--verbose', # verbose needed to get timing of solver
+                '--timeout 86400', # 24 hours, this will be ignored 
+                                   # since we expect reframe timeout to be smaller than this.
+                f'--test-dir {self.seahorn_build_artefacts.stagedir}/rfm-build', f'-R {ctestname}']
 
     @sanity_function
     def validate_exit(self):
         if self.tool == 'kani':
             return sn.assert_eq(self.job.exitcode, 0)
         elif self.tool == 'seahorn':
+            # can be sat or unsat
             return sn.assert_eq(self.job.exitcode, 0) & sn.assert_found(
-                r"\w+_unsat_test.*Passed\s+[\d.]+\s+sec", self.stdout
+                r"\w+_(un)?sat_test.*Passed\s+[\d.]+\s+sec", self.stdout
             )
 
     @performance_function('s')
@@ -85,76 +111,23 @@ class BmcProofTest(rfm.RunOnlyRegressionTest):
         if self.tool == 'kani':
             return sn.extractsingle(r"Verification Time:\s*([\d.]+)s", self.stdout, 1, float)
         elif self.tool == 'seahorn':
-            return sn.extractsingle(r"(?P<test_name>\w+)_unsat_test.*Passed\s+([\d.]+)\s+sec", self.stdout, 2, float)
-    # @run_after('setup')
-    # def setup_test(self):
-    #     self.descr = "Run Kani proofs and report results"
-    #     self.valid_systems = ['*']
-    #     self.valid_prog_environs = ['*']
-    #     self.
-    #     self.executable_opts = ['kani']
-    #     self.sanity_patterns = sn.assert_found(r'VERIFICATION:- SUCCESSFUL', self.stdout)
-    #     self.sourcesdir = self.directory
-    #     # Check if the directory exists
-    #     if not Path(self.directory).exists():
-    #         raise FileNotFoundError(f"Directory not found: {self.directory}")
+            return sn.extractsingle(r"BRUNCH_STAT seahorn_total\s+([\d.]+)", self.stdout, 1, float)
+            #return sn.extractsingle(r"(?P<test_name>\w+)_unsat_test.*Passed\s+([\d.]+)\s+sec", self.stdout, 2, float)
     
-    # @run_before('run')
-    # def prepare_tests(self):
-    #     all_tests = self.get_kani_tests()
-    #     if self.tests:
-    #         all_tests = [test for test in all_tests if test in self.tests]
-    #     if self.excluded_tests:
-    #         all_tests = [test for test in all_tests if test not in self.excluded_tests]
-    #     self.test_cases = all_tests
+    @performance_function('formula size')
+    def vcc_generated(self):
+        if self.tool == 'kani':
+            return sn.extractsingle(r"Generated \d+ VCC\(s\), (\d+) remaining after simplification", self.stdout, 1, int)
+        elif self.tool == 'seahorn':
+            return sn.extractsingle(r"BRUNCH_STAT bmc\.dag_sz\s+(\d+)", self.stdout, 1, int)
 
-    # def get_kani_tests(self):
-    #     lib_rs = Path(self.directory) / "lib.rs"
-    #     if not lib_rs.exists():
-    #         self.logger.error(f"File not found: {lib_rs}")
-    #         return []
-    #     with lib_rs.open("r", encoding="utf-8") as f:
-    #         contents = f.read()
-    #     pattern = re.compile(
-    #         r'#\[cfg_attr\(kani,\s*kani::proof\)\](?:\n#.*)*\nfn\s+(\w+)',
-    #         re.MULTILINE,
-    #     )
-    #     return pattern.findall(contents)
-
-    # @run_after('run')
-    # def parse_results(self):
-    #     results = []
-    #     for test in self.test_cases:
-    #         result = self.run_kani_test(test)
-    #         results.append(result)
-    #     with open('kani_results.json', 'w') as f:
-    #         json.dump(results, f, indent=2)
-
-    # def run_kani_test(self, testname):
-        
-    #     self.job.options = [f'--time={self.timeout_sec}s'] if self.timeout_sec else []
-    #     self.run()
-    #     # Read the output from the stdout file
-    #     with open(self.stdout.evaluate(), 'r') as f:
-    #         output = f.read()
-    #     result, verification_time = self.parse_kani_test_result(output)
-    #     return {
-    #         "testname": testname,
-    #         "result": result,
-    #         "verification_time": verification_time,
-    #     }
-
-    # def parse_kani_test_result(self, output):
-    #     result = "fail"
-    #     verification_time = None
-    #     if "VERIFICATION:- SUCCESSFUL" in output:
-    #         result = "pass"
-    #     if output is None or not isinstance(output, str):
-    #         self.logger.error("Output is not valid for parsing.")
-    #         return result, verification_time
-
-    #     match = re.findall(r"Verification Time:\s*([\d.]+)s", output)
-    #     if match:
-    #         verification_time = float(match[-1])
-    #     return result, verification_time
-    
+    @performance_function('s')
+    def solver_time(self):
+        if self.tool == 'kani':
+            #solver_times = sn.extractall(r"Runtime Solver:\s*([\d.]+)s", self.stdout, 1, float)
+            decision_times = sn.extractall(r"Runtime decision procedure:\s*([\d.]+)s", self.stdout, 1, float)
+            return sn.sum(decision_times) # + sn.sum(solver_times)
+        elif self.tool == 'seahorn':
+            bmc_solve_time = sn.extractall(r"BRUNCH_STAT BMC\.solve\s+([\d.]+)", self.stdout, 1, float)
+            opsem_simplify_time = sn.extractall(r"BRUNCH_STAT opsem\.simplify\s+([\d.]+)", self.stdout, 1, float)
+            return sn.sum(bmc_solve_time) + sn.sum(opsem_simplify_time)
