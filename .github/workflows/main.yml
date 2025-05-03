@@ -1,6 +1,6 @@
-name: CI
+qname: CI
 
-on: 
+on:
   push:
     branches: main
   pull_request:
@@ -14,8 +14,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        verify_flag: [""] #, "--vac", "--cex"]
-       
+        verify_flag: ["", "--vac", "--cex"]
+        ctest_flag: ["", "--label-exclude=\"skipvac\""]
+        exclude:
+          - verify_flag: ""
+            ctest_flag: "--label-exclude=\"skipvac\""
+          - verify_flag: "--cex"
+            ctest_flag: "--label-exclude=\"skipvac\""
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -23,6 +28,10 @@ jobs:
       - name: Get type
         id: type
         run: echo ::set-output name=type::$(echo ${{ matrix.verify_flag }} | awk '{ print substr($1,3,5) "" substr($2,22) }')
+
+      - name: Get Ctest opt
+        id: ctest_opt
+        run: echo ::set-output name=type::$(echo ${{ matrix.ctest_flag }} | awk '{ print substr($1,3,5) "" substr($2,22) }')
 
       - name: Get exclude test
         id: exclude_files
@@ -36,4 +45,4 @@ jobs:
         run: echo "::set-output name=num_cores::$(nproc --all)"
 
       - name: Run Tests
-        run: docker run -t verify-rust /bin/bash -c "cd build && mkdir -p /tmp/verify-rust && env VERIFY_FLAGS=\"${{ matrix.verify_flag }}\" ctest -j ${{steps.cores.outputs.num_cores}} --output-on-failure --timeout 2000 -E \"${{ steps.exclude_files.outputs.exclude_files }}\""
+        run: docker run -t verify-rust /bin/bash -c "cd build && mkdir -p /tmp/verify-rust && env VERIFY_FLAGS=\"${{ matrix.verify_flag }}\" ctest \"${{ matrix.ctest_flag }}\"  -j ${{steps.cores.outputs.num_cores}} --output-on-failure --timeout 2000 -E \"${{ steps.exclude_files.outputs.exclude_files }}\""
