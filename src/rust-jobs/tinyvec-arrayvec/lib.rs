@@ -1,17 +1,16 @@
 #![cfg_attr(not(kani), no_std)]
 
-use verifier;
-use sea;
 use tinyvec::ArrayVec;
+
 
 #[no_mangle]
 pub extern "C" fn entrypt() {
     let v: u8 = verifier::any!();
     match v {
-        0 => test_append(),
+        0 => testfail_append(),
         1 => test_clear(),
         2 => test_drain(),
-        3 => test_extend_from_slice(),
+        3 => testfail_extend_from_slice(),
         4 => test_fill(),
         5 => test_from_array_empty(),
         6 => test_from_array_len(),
@@ -26,7 +25,7 @@ pub extern "C" fn entrypt() {
         15 => test_retain(),
         16 => test_set_len(),
         17 => test_splice(),
-        18 => test_splice_panic(),
+        18 => testfail_splice_panic(),
         19 => test_split_off(),
         20 => test_swap_remove(),
         21 => test_truncate(),
@@ -34,14 +33,15 @@ pub extern "C" fn entrypt() {
         23 => test_try_from_array_len(),
         24 => test_try_insert(),
         25 => test_try_push(),
-        26 => test_drain_panic(),
+        26 => testfail_drain_panic(),
+        27 => test_append(),
         _ => (),
     }
 }
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_append() {
     const CAP: usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
@@ -52,11 +52,48 @@ fn test_append() {
 
     let len2: usize = verifier::any!();
     verifier::assume!(len2 <= CAP);
-    
+    verifier::assume!(len1 + len2 <= CAP);
+
     for _i in 0..len1 {
         v1.push(verifier::any!());
     }
-    
+
+    verifier::vassert!(v1.len() == len1);
+
+    for _i in 0..len2 {
+        v2.push(verifier::any!());
+    }
+
+    verifier::vassert!(v2.len() == len2);
+
+    // Should not panic
+    v1.append(&mut v2);
+
+
+    verifier::vassert!(v1.len() == len1 + len2);
+    verifier::vassert!(v2.len() == 0);
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_append() {
+    const CAP: usize = 4;
+    let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let mut v2: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len1: usize = verifier::any!();
+    verifier::assume!(len1 <= CAP);
+
+    let len2: usize = verifier::any!();
+    verifier::assume!(len2 <= CAP);
+
+    for _i in 0..len1 {
+        v1.push(verifier::any!());
+    }
+
     verifier::vassert!(v1.len() == len1);
 
     for _i in 0..len2 {
@@ -97,7 +134,7 @@ fn test_clear() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(4))]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_drain() {
     const CAP : usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
@@ -124,8 +161,9 @@ fn test_drain() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(4))]
-fn test_drain_panic() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_drain_panic() {
     const CAP : usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
@@ -157,11 +195,10 @@ fn test_drain_panic() {
     verifier::error!();
 }
 
-
-
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-fn test_extend_from_slice() {
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_extend_from_slice() {
     const CAP: usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
     let mut v2: ArrayVec<[u32; CAP]> = ArrayVec::new();
@@ -194,7 +231,30 @@ fn test_extend_from_slice() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
+fn test_extend_from_slice() {
+    const CAP: usize = 4;
+    let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let mut v2: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len1: usize = verifier::any!();
+    let len2: usize = verifier::any!();
+
+    verifier::assume!(len1 <= CAP);
+    verifier::assume!(len2 <= CAP);
+
+    for _i in 0..len1 {
+        v1.push(verifier::any!());
+    }
+
+    for _i in 0..len2 {
+        v2.push(verifier::any!());
+    }
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_fill() {
     const CAP : usize = 4;
     let len: usize = verifier::any!();
@@ -228,8 +288,9 @@ fn test_from_array_empty() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-fn test_from_array_len() {
-    const CAP : usize = 8;
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_from_array_len() {
+    const CAP : usize = 4;
     let len: usize = verifier::any!();
 
     if len <= CAP {
@@ -250,6 +311,26 @@ fn test_from_array_len() {
     let result: u32 = x * 2;
     verifier::vassert!(result >= x);
 }
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+fn test_from_array_len() {
+    const CAP : usize = 4;
+    let len: usize = verifier::any!();
+
+    if len <= CAP {
+        let v: ArrayVec<[u32; CAP]> = ArrayVec::from_array_len([0; CAP], len);
+
+        verifier::vassert!(v.len() == len);
+
+        // Necessary to make seahorn work.
+        let x: u32 = verifier::any!();
+        verifier::assume!(x < u32::MAX/2);
+        let result: u32 = x * 2;
+        verifier::vassert!(result >= x);
+    }
+}
+
 
 // Documentation lists this as a function, but the compiler says it doesn't exist.
 // https://docs.rs/tinyvec/latest/tinyvec/struct.ArrayVec.html#method.grab_spare_slice
@@ -280,14 +361,15 @@ fn test_grab_spare_slice() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_insert() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_insert() {
     const CAP : usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
     let len: usize = verifier::any!();
     verifier::assume!(len > 0 && len <= CAP - 1);
-    
+
     for _i in 0..len {
         v.push(verifier::any!());
     }
@@ -316,6 +398,28 @@ fn test_insert() {
 
     // This assertion should not be reachable as the previous insertion should panic.
     verifier::error!();
+}
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_insert() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len: usize = verifier::any!();
+    verifier::assume!(len > 0 && len <= CAP - 1);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let insert_point: usize = verifier::any!();
+    verifier::assume!(insert_point < len);
+    v.insert(insert_point, verifier::any!());
+
+    verifier::vassert!(v.len() == len + 1);
+    verifier::vassert!(v.capacity() == CAP);
 }
 
 #[no_mangle]
@@ -352,7 +456,8 @@ fn test_pop() {
         verifier::vassert!(result.is_some());
         verifier::vassert!(v.len() == len - i - 1);
     }
-    sea::sea_printf!("len: %d\n", v.len());
+
+    verifier::vassert!(v.len() == 0);
     // v is empty, so this should return None.
     let result: Option<u32> = v.pop();
 
@@ -361,7 +466,9 @@ fn test_pop() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-fn test_push() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_push() {
     const CAP : usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
     let len: usize = verifier::any!();
@@ -386,8 +493,29 @@ fn test_push() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_remove() {
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_push() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+
+    for i in 0..len {
+        v.push(verifier::any!());
+        verifier::vassert!(v.len() == i + 1);
+    }
+
+    verifier::vassert!(v.len() == len);
+    verifier::vassert!(v.capacity() == CAP);
+}
+
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_remove() {
     const CAP : usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
     let len: usize = verifier::any!();
@@ -427,8 +555,45 @@ fn test_remove() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_resize() {
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_remove() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let len: usize = verifier::any!();
+    verifier::assume!(2 <= len && len <= CAP);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let remove_point1: usize = verifier::any!();
+    verifier::assume!(remove_point1 < len);
+
+    v.remove(remove_point1);
+
+    verifier::vassert!(v.len() == len - 1);
+    verifier::vassert!(v.capacity() == CAP);
+
+    let remove_point2: usize = verifier::any!();
+    verifier::assume!(remove_point2 < v.len());
+
+    v.remove(remove_point2);
+
+    verifier::vassert!(v.len() == len - 2);
+    verifier::vassert!(v.capacity() == CAP);
+
+    for i in 0..len - 2 {
+        v.remove(0);
+        verifier::vassert!(v.len() == len - 3 - i);
+    }
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_resize() {
     const CAP : usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
@@ -447,7 +612,7 @@ fn test_resize() {
 
     let resize_point2: usize = verifier::any!();
     v.resize(resize_point2, verifier::any!());
-
+    verifier::assume!(resize_point2 <= CAP);
     verifier::vassert!(v.len() == resize_point2);
 
     let resize_point3: usize = verifier::any!();
@@ -461,8 +626,37 @@ fn test_resize() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_resize_with() {
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_resize() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let resize_point: usize = verifier::any!();
+    verifier::assume!(resize_point <= CAP);
+    v.resize(resize_point, verifier::any!());
+
+    verifier::vassert!(v.len() == resize_point);
+
+    let resize_point2: usize = verifier::any!();
+    verifier::assume!(resize_point2 <= CAP);
+    v.resize(resize_point2, verifier::any!());
+
+    verifier::vassert!(v.len() == resize_point2);
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_resize_with() {
     const CAP : usize = 4;
     let mut v: ArrayVec<[u32; 4]> = ArrayVec::new();
 
@@ -481,7 +675,7 @@ fn test_resize_with() {
 
     let resize_point2: usize = verifier::any!();
     v.resize_with(resize_point2, || verifier::any!());
-
+    verifier::assume!(resize_point2 <= CAP);
     verifier::vassert!(v.len() == resize_point2);
 
     let resize_point3: usize = verifier::any!();
@@ -495,9 +689,38 @@ fn test_resize_with() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(3))]
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_resize_with() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; 4]> = ArrayVec::new();
+
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= 4);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let resize_point: usize = verifier::any!();
+    verifier::assume!(resize_point <= CAP);
+    v.resize_with(resize_point, || verifier::any!());
+
+    verifier::vassert!(v.len() == resize_point);
+
+    let resize_point2: usize = verifier::any!();
+    verifier::assume!(resize_point2 <= CAP);
+
+    v.resize_with(resize_point2, || verifier::any!());
+
+    verifier::vassert!(v.len() == resize_point2);
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_retain() {
-    const CAP : usize = 2;
+    const CAP : usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
     let len: usize = verifier::any!();
@@ -526,7 +749,9 @@ fn test_retain() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-fn test_set_len() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_set_len() {
     const CAP: usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
@@ -546,6 +771,23 @@ fn test_set_len() {
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
 #[cfg_attr(kani, kani::unwind(5))]
+fn test_set_len() {
+    const CAP: usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+    v.set_len(len);
+
+    verifier::vassert!(v.len() == len);
+    verifier::vassert!(v.capacity() == CAP);
+
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_splice() {
     const CAP: usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
@@ -561,8 +803,8 @@ fn test_splice() {
     verifier::assume!(splice_point < len);
 
     let val: u32 = verifier::any!();
-
-    let v2: ArrayVec<[u32; CAP]> = v1.splice(splice_point.., val..val + len as u32 - splice_point as u32).collect();
+    verifier::assume!(val <= u32::MAX - (len as u32 - splice_point as u32));
+    let v2: ArrayVec<[u32; CAP]> = v1.splice(splice_point.., val..val + (len as u32 - splice_point as u32)).collect();
 
     verifier::vassert!(v1.len() == len);
     verifier::vassert!(v2.len() == len - splice_point);
@@ -581,7 +823,8 @@ fn test_splice() {
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
 #[cfg_attr(kani, kani::unwind(5))]
-fn test_splice_panic() {
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_splice_panic() {
     const CAP: usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
@@ -606,6 +849,7 @@ fn test_splice_panic() {
         verifier::assume!(splice_point5 > len);
 
         let val: u32 = verifier::any!();
+        verifier::assume!(val <= u32::MAX - splice_point5 as u32);
 
         // End is past end of vector, so panic should occur.
         let _: ArrayVec<[u32; CAP]> = v1.splice(..splice_point5, val..val + splice_point5 as u32).collect();
@@ -629,8 +873,9 @@ fn test_splice_panic() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_split_off() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_split_off() {
     const CAP: usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
     let len: usize = verifier::any!();
@@ -656,8 +901,31 @@ fn test_split_off() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(6))]
-fn test_swap_remove() {
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_split_off() {
+    const CAP: usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let split_point: usize = verifier::any!();
+    verifier::assume!(split_point <= len);
+    let v2: ArrayVec<[u32; CAP]> = v.split_off(split_point);
+
+    verifier::vassert!(v.len() == split_point);
+    verifier::vassert!(v2.len() == len - split_point);
+
+}
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_swap_remove() {
     const CAP: usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
     let len: usize = verifier::any!();
@@ -697,12 +965,49 @@ fn test_swap_remove() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_swap_remove() {
+    const CAP: usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+    let len: usize = verifier::any!();
+    verifier::assume!(2 <= len && len <= CAP);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let remove_point1: usize = verifier::any!();
+    verifier::assume!(remove_point1 < len);
+
+    v.swap_remove(remove_point1);
+
+    verifier::vassert!(v.len() == len - 1);
+    verifier::vassert!(v.capacity() == CAP);
+
+    let remove_point2: usize = verifier::any!();
+    verifier::assume!(remove_point2 < v.len());
+
+    v.swap_remove(remove_point2);
+
+    verifier::vassert!(v.len() == len - 2);
+    verifier::vassert!(v.capacity() == CAP);
+
+    for i in 0..len - 2 {
+        v.swap_remove(0);
+        verifier::vassert!(v.len() == len - 3 - i);
+    }
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_truncate() {
-    let mut v: ArrayVec<[u32; 8]> = ArrayVec::new();
+    const CAP: usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
     let len: usize = verifier::any!();
-    verifier::assume!(len <= 8);
+    verifier::assume!(len <= CAP);
 
     for _i in 0..len {
         v.push(verifier::any!());
@@ -714,20 +1019,20 @@ fn test_truncate() {
     v.truncate(truncate_point);
 
     verifier::vassert!(v.len() == truncate_point);
-    verifier::vassert!(v.capacity() == 8);
+    verifier::vassert!(v.capacity() == CAP);
 
     let truncate_point2: usize = verifier::any!();
     verifier::assume!(truncate_point2 > truncate_point);
-    
+
     v.truncate(truncate_point2);
 
     verifier::vassert!(v.len() == truncate_point);
-    verifier::vassert!(v.capacity() == 8);
+    verifier::vassert!(v.capacity() == CAP);
 }
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_try_append() {
     const CAP: usize = 4;
     let mut v1: ArrayVec<[u32; CAP]> = ArrayVec::new();
@@ -738,11 +1043,11 @@ fn test_try_append() {
 
     let len2: usize = verifier::any!();
     verifier::assume!(len2 <= CAP);
-    
+
     for _i in 0..len1 {
         v1.push(verifier::any!());
     }
-    
+
     verifier::vassert!(v1.len() == len1);
 
     for _i in 0..len2 {
@@ -766,7 +1071,7 @@ fn test_try_append() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
+#[cfg_attr(kani, kani::unwind(5))]
 fn test_try_from_array_len() {
     let len: usize = verifier::any!();
 
@@ -788,11 +1093,12 @@ fn test_try_from_array_len() {
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-#[cfg_attr(kani, kani::unwind(9))]
-fn test_try_insert() {
+#[cfg_attr(kani, kani::unwind(5))]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_try_insert() {
     const CAP: usize = 4;
     let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
-    
+
     let len: usize = verifier::any!();
     verifier::assume!(len <= CAP);
 
@@ -815,8 +1121,38 @@ fn test_try_insert() {
         verifier::vassert!(result.is_none());
         verifier::vassert!(v.len() == len + 1);
         verifier::vassert!(v.capacity() == CAP);
-    }    
+    }
 }
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_try_insert() {
+    const CAP: usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+
+    for _i in 0..len {
+        v.push(verifier::any!());
+    }
+
+    let insert_point: usize = verifier::any!();
+    verifier::assume!(insert_point <= len);
+    let result: Option<u32> = v.try_insert(insert_point, verifier::any!());
+
+    if len == CAP {
+        verifier::vassert!(result.is_some());
+        verifier::vassert!(v.len() == CAP);
+        verifier::vassert!(v.capacity() == CAP);
+    } else {
+        verifier::vassert!(result.is_none());
+        verifier::vassert!(v.len() == len + 1);
+        verifier::vassert!(v.capacity() == CAP);
+    }
+}
+
 
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
