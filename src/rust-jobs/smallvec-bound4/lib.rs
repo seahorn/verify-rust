@@ -129,8 +129,7 @@ fn test_try_grow() {
 
     let new_cap2: usize = verifier::any!();
     verifier::assume!(new_cap2 < len);
-
+    // should panic since new_cap2 < len
     let result2: Result<(), smallvec::CollectionAllocErr> = v.try_grow(new_cap2);
-
-    verifier::vassert!(result2.is_err());
+    verifier::error!();
 }
