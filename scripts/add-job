@@ -28,6 +28,12 @@ def generate_cargo(directory, job):
 
         [dependencies]
         libc = "0.2"
+        cfg-if = "0.1.10"
+
+        [dependencies.verifier]
+        path = "../../verifier/src"
+        default-features = false
+        features = ["no_std"]    
         
         [dependencies.sea]
         path = "../../sea-lib"
