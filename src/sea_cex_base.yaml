@@ -7,7 +7,7 @@
 #
 verify_options:
 # Optimization lelel. Lower to O1 for clearer counterexamples
-  '-O1': ''
+  '-O2': ''
 # 
 # PREPROCESSING
 #

@@ -38,8 +38,8 @@ verify_options:
 # intermediate results in human readable form for debugging
   '-S': ''
 # keep intermediate results for debugging 
-  keep-temps: ''
-  temp-dir: /tmp/verify-rust
+#  keep-temps: ''
+#  temp-dir: /tmp/verify-rust
 # time and result stats
   horn-stats: true
 # Promote defined verifier fns
