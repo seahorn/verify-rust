@@ -16,7 +16,8 @@ cfg-if = "0.1.10"
 [dependencies.verifier]
 path = "../../verifier/src"
 default-features = false
-features = ["no_std"]
+# panic_error also implies no_std
+features = ["panic_error"]
 
 [dependencies.smallvec]
 version = "1.10.0"
@@ -29,3 +30,4 @@ features = []
 
 [features]
 default = []  # Specify other default features here, if any        
+

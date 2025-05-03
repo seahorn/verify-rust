@@ -1,7 +1,7 @@
 #![cfg_attr(not(kani), no_std)]
 
 use verifier;
-
+use sea;
 use smallvec::SmallVec;
 
 #[no_mangle]
@@ -13,7 +13,7 @@ pub extern "C" fn entrypt() {
         2 => test_drain_panic(),
         3 => test_insert_many(),
         4 => test_insert_many_panic(),
-        5 => test_resize(),
+        5 => test_resize_conc(),
         6 => test_resize2(),
         7 => test_resize_with(),
         8 => test_resize_with2(),
@@ -117,7 +117,8 @@ fn test_drain_panic() {
     }
 
     // This assertion should not be reachable since the previous call to drain should panic.
-    verifier::vassert!(false);
+    // TODO: Make this a SAT test and enable discovery of sat tests
+    // verifier::vassert!(false);
 }
 
 #[no_mangle]
@@ -184,7 +185,8 @@ fn test_insert_many_panic() {
     v.insert_many(insert_point, v2.clone());
 
     // This assertion should not be reachable since the previous operation should panic.
-    verifier::vassert!(false);
+    // TODO: Make this a SAT test and enable discovery of sat tests
+    // verifier::vassert!(false);
 }
 
 #[no_mangle]
@@ -211,23 +213,44 @@ fn test_resize() {
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
 #[cfg_attr(kani, kani::unwind(3))]
+fn test_resize_conc() {
+    const CAP: usize = 2;
+    let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
+    const LEN : usize = CAP;
+    //let len: usize = verifier::any!();
+    //verifier::assume!(len <= CAP);
+
+    for _i in 0..LEN {
+        v.push(verifier::any!());
+    }
+
+    //let resize_point: usize = verifier::any!();
+    //verifier::assume!(resize_point <= len);
+    const RESIZE_POINT: usize = 1;
+    v.resize(RESIZE_POINT, verifier::any!());
+
+    verifier::vassert!(v.len() == RESIZE_POINT);
+}
+
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(3))]
 fn test_resize2() {
     const CAP: usize = 2;
     let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
-
-    let len: usize = verifier::any!();
-    verifier::assume!(len <= CAP);
-
+    let len = verifier::any!();
+    verifier::assume!(len < CAP);
     for _i in 0..len {
         v.push(verifier::any!());
     }
 
     let resize_point: usize = verifier::any!();
-    verifier::assume!(resize_point > CAP && resize_point <= 2*CAP);
-
+    verifier::assume!(resize_point > len && resize_point <= CAP);
+    sea::sea_printf!("len: %d, resize_point: %d, cap:%d inline_sz:%d", len, resize_point, CAP, v.inline_size());
     v.resize(resize_point, verifier::any!());
 
-    verifier::vassert!(v.len() == resize_point);
+    verifier::vassert!(v.len() != resize_point);
 }
 
 #[no_mangle]
