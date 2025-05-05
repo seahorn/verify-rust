@@ -83,7 +83,7 @@ jobs:
             --cxx-compiler=clang++-14 \
             --c-compiler=clang-14 \
             --seahorn-root=/home/usea/seahorn \
-            --rust-compiler=$(rustup which rustc) \
-            --rust-cargo=$(rustup which cargo) \
+            --rust-compiler=\$(rustup which rustc) \
+            --rust-cargo=\$(rustup which cargo) \
             --testcases test_append,tinyvec-arrayvec
           "
