@@ -65,12 +65,12 @@ jobs:
             /home/usea/verify-rust -GNinja &&
           cmake --build . &&
           mkdir -p /tmp/verify-rust &&
-          env VERIFY_FLAGS=\"${{ matrix.verify_flag }}\" \
-          ctest \"${{ matrix.ctest_flag }}\" \
+          env VERIFY_FLAGS="${{ matrix.verify_flag }}" \
+          ctest "${{ matrix.ctest_flag }}" \
             -j ${{steps.cores.outputs.num_cores}} \
             --output-on-failure \
             --timeout 2000 \
-            -E \"${{ steps.exclude_files.outputs.exclude_files }}\"
+            -E "${{ steps.exclude_files.outputs.exclude_files }}"
           "
 
       - name: run benchmarks
