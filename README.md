@@ -1,4 +1,4 @@
-# c-rust
+# verify-rust
 
 ![os](https://img.shields.io/badge/os-linux-orange?logo=linux)
 [![CI](https://github.com/seahorn/verify-rust/actions/workflows/main.yml/badge.svg)](https://github.com/seahorn/verify-rust/actions?query=workflow%3ACI)
