@@ -66,6 +66,7 @@ jobs:
           cmake --build . &&
           mkdir -p /tmp/verify-rust &&
           env VERIFY_FLAGS=${{ matrix.verify_flag }} \
+            ctest \
             -j ${{ steps.cores.outputs.num_cores }} \
             --output-on-failure \
             --timeout 2000 \
