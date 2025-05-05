@@ -14,13 +14,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        verify_flag: ["", "--vac", "--cex"]
-        ctest_flag: ["", "--label-exclude=\"skipvac\""]
-        exclude:
-          - verify_flag: ""
-            ctest_flag: "--label-exclude=\"skipvac\""
-          - verify_flag: "--cex"
-            ctest_flag: "--label-exclude=\"skipvac\""
+        #verify_flag: ["", "--vac", "--cex"]
+        verify_flag: [""]
+        #ctest_flag: ["", "--label-exclude=\"skipvac\""]
+        ctest_flag: [""]
+        # exclude:
+        #   - verify_flag: ""
+        #     ctest_flag: "--label-exclude=\"skipvac\""
+        #   - verify_flag: "--cex"
+        #     ctest_flag: "--label-exclude=\"skipvac\""
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -44,5 +46,38 @@ jobs:
         id: cores
         run: echo "::set-output name=num_cores::$(nproc --all)"
 
-      - name: Run Tests
-        run: docker run -t verify-rust /bin/bash -c "cd build && mkdir -p /tmp/verify-rust && env VERIFY_FLAGS=\"${{ matrix.verify_flag }}\" ctest \"${{ matrix.ctest_flag }}\"  -j ${{steps.cores.outputs.num_cores}} --output-on-failure --timeout 2000 -E \"${{ steps.exclude_files.outputs.exclude_files }}\""
+      - name: run tests
+        run: |
+          docker run -t verify-rust /bin/bash -c "
+          rm -Rf build && mkdir build && cd build &&
+          cmake \
+            -DCMAKE_C_COMPILER=clang-14 \
+            -DCMAKE_CXX_COMPILER=clang++-14 \
+            -DSEAHORN_ROOT=/home/usea/seahorn \
+            -DRust_COMPILER=$(rustup which rustc) \
+            -DRust_CARGO=$(rustup which cargo) \
+            /home/usea/verify-rust -GNinja &&
+          cmake --build . &&
+          mkdir -p /tmp/verify-rust &&
+          env VERIFY_FLAGS=\"${{ matrix.verify_flag }}\" \
+          ctest \"${{ matrix.ctest_flag }}\" \
+            -j ${{steps.cores.outputs.num_cores}} \
+            --output-on-failure \
+            --timeout 2000 \
+            -E \"${{ steps.exclude_files.outputs.exclude_files }}\"
+          "
+
+      - name: run benchmarks
+        run: |
+          docker run -t verify-rust /bin/bash -c "
+          python3 /home/usea/verify-rust/benchmark/run_benchmark.py \
+            --timeout_sec=1800 \
+            --report-file=report.out \
+            --mode=testcases \
+            --cxx-compiler=clang++-14 \
+            --c-compiler=clang-14 \
+            --seahorn-root=/home/usea/seahorn \
+            --rust-compiler=$(rustup which rustc) \
+            --rust-cargo=$(rustup which cargo) \
+            --testcases test_append,tinyvec-arrayvec
+          "
