@@ -54,8 +54,8 @@ jobs:
             -DCMAKE_C_COMPILER=clang-14 \
             -DCMAKE_CXX_COMPILER=clang++-14 \
             -DSEAHORN_ROOT=/home/usea/seahorn \
-            -DRust_COMPILER=$(rustup which rustc) \
-            -DRust_CARGO=$(rustup which cargo) \
+            -DRust_COMPILER=\$(rustup which rustc) \
+            -DRust_CARGO=\$(rustup which cargo) \
             /home/usea/verify-rust -GNinja &&
           cmake --build . &&
           mkdir -p /tmp/verify-rust &&
