@@ -1,0 +1,6 @@
+cfg-simplify_unsat_test # no assertion found (expected)
+custom-vec-raw_vec_unsat_test # timeout
+smallvec-allocation_test_insert_from_slice_unsat_test # failed
+smallvec-allocation_test_with_capacity_unsat_test # failed
+tinyvec-arrayvec_test_retain_unsat_test # timeout (expected)
+
