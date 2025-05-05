@@ -37,7 +37,13 @@ jobs:
 
       - name: Get exclude test
         id: exclude_files
-        run: (test -f ".github/workflows/blacklist.${{steps.type.outputs.type}}.txt" && echo ::set-output name=exclude_files::"($(cut -f 1 ".github/workflows/blacklist.${{steps.type.outputs.type}}.txt" | head -c -1 | tr '\n' '|'))" ) || (echo ::set-output name=exclude_files::" ")
+        run: |
+          if [ "${{ steps.type.outputs.type }}" = "" ]; then
+            blacklist_file=".github/workflows/blacklist.txt"
+          else
+            blacklist_file=".github/workflows/blacklist.${{ steps.type.outputs.type }}.txt"
+          fi
+          (test -f "$blacklist_file" && echo ::set-output name=exclude_files::"($(cut -f 1 "$blacklist_file" | head -c -1 | tr '\n' '|'))" ) || (echo ::set-output name=exclude_files::" ")
 
       - name: Docker (Build tests)
         run: docker build -t verify-rust . --file docker/verify-rust.Dockerfile
