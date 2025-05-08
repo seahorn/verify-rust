@@ -45,14 +45,14 @@ jobs:
           fi
           (test -f "$blacklist_file" && echo ::set-output name=exclude_files::"($(cut -f 1 "$blacklist_file" | head -c -1 | tr '\n' '|'))" ) || (echo ::set-output name=exclude_files::" ")
 
-      - name: Docker (Build tests)
+      - name: Build proofs
         run: docker build -t verify-rust . --file docker/verify-rust.Dockerfile
 
       - name: Get number of Cores
         id: cores
         run: echo "::set-output name=num_cores::$(nproc --all)"
 
-      - name: run tests
+      - name: run seahorn proofs
         run: |
           docker run -t verify-rust /bin/bash -c "
           rm -Rf build && mkdir build && cd build &&
@@ -71,6 +71,7 @@ jobs:
             --output-on-failure \
             --timeout 2000 \
             -E \"${{ steps.exclude_files.outputs.exclude_files }}\"
+            -R \
           "
 
       - name: run benchmarks
