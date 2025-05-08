@@ -10,7 +10,13 @@ RUN apt -y remove --purge cmake
 RUN apt -y update
 RUN apt -y install wget python3-pip
 RUN python3 -m pip install --upgrade pip
-RUN apt -y install emacs
+RUN apt -y install nano
+RUN apt -y install texlive-xetex
+RUN apt -y install pandoc
+RUN python3 -m pip install notebook
+RUN python3 -m pip install pandas
+RUN python3 -m pip install matplotlib
+RUN python3 -m pip install --upgrade "jinja2>=3.1.2"
 
 ## Install rust
 USER usea
