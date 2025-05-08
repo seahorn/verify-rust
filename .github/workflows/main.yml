@@ -70,8 +70,8 @@ jobs:
             -j ${{ steps.cores.outputs.num_cores }} \
             --output-on-failure \
             --timeout 2000 \
-            -E \"${{ steps.exclude_files.outputs.exclude_files }}\"
-            -R \
+            -E \"${{ steps.exclude_files.outputs.exclude_files }}\" \
+            -R
           "
 
       - name: run benchmarks
