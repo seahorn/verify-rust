@@ -184,3 +184,37 @@ function(sea_discover_tests TARGET)
     DEPENDS ${ctest_file})
   add_dependencies("${TARGET}_disc_tests" ${target_ir})
 endfunction()
+
+function(sea_discover_unsat_tests TARGET)
+  sea_get_file_name(BC ${TARGET}.ir)
+  cmake_path(SET bcpath "${BC}")
+  cmake_path(GET bcpath PARENT_PATH bc_dir_path)
+  cmake_path(APPEND bc_dir_path "CTestTestfile.cmake" OUTPUT_VARIABLE ctest_file)
+  string(CONCAT target_ir ${TARGET} ".ir")
+  add_custom_command(
+    OUTPUT ${ctest_file}
+    COMMAND ${CMAKE_COMMAND}
+    ARGS
+    -D "TARGET=${TARGET}"  # name of target
+    -D "TEST_TARGET=${BC}"  # full path of linked bitcode IR file
+    -D "VERIFY_CMD=${VERIFY_CMD}"  # verify cmd to use
+    -D "SYS_LLVM_NM=${LLVM_NM}"
+    -D "SYS_AWK=${AWK}"
+    -D "SYS_CPP_FILT=${CPP_FILT}"
+    -P ${EXTRACT_TEST_CMD}  # extract tests script
+    DEPENDS ${BC}
+    COMMENT "Writing discovered tests to ${ctest_file}"
+    VERBATIM
+    )
+  # Add discovered tests to directory TEST_INCLUDE_FILES
+  set_property(DIRECTORY
+    APPEND PROPERTY TEST_INCLUDE_FILES "${ctest_file}"
+  )
+  # Test discovery should run only after the linking of the final IR. For this,
+  # we need to create a custom target (discovery) that depends on the custom cmd
+  # (discovery) output and then declare that the custom target (discovery)
+  # depends on the custom cmd (linking).
+  add_custom_target("${TARGET}_disc_tests" ALL  # ALL adds it to default target list in Ninja
+    DEPENDS ${ctest_file})
+  add_dependencies("${TARGET}_disc_tests" ${target_ir})
+endfunction()
