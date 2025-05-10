@@ -1,0 +1,193 @@
+# Artifact Submission
+Title of the submitted paper: A Tale of Two Case Studies: A Unified Exploration of Rust Verification with SeaBMC
+Paper number: 59
+
+## Summary 
+
+Please list for each distinct component of your artifact:
+
+The artifact is a docker image that provides unit proof sources for the verify-rust case study that can be compiled and executed as described in the main paper. 
+* type of artifact -- code, proof
+* format -- source code, binary 
+* location in the container/VM (WORKDIR /tmp/benchmarks)
+```
+/home/usea/verify-rust
+├── benchmark (benchmarking scripts and data)
+├── cmake (cmake scripts for seahorn)
+├── docker (docker scripts for seahorn)
+├── scripts (scripts to add a unit proff)
+├── src (contains unit proofs)
+```
+
+## OS and resources: 
+  - CPU: Intel(R) Xeon(R) CPU E5-2680,
+  - RAM: 64 GiB,
+  - OS: Ubuntu 22.04,
+  - Disk space: 5 GiB, 
+  - Internet connection for downloading docker image,
+  - Docker tested only on ubuntu.
+
+
+## Other requirements
+
+These instructions have been tested on the reference Linux system with the following software. 
+
+* docker -- v24.0.7
+* gunzip -- v1.10
+
+### Prepare image
+
+1. Download the image archive from figshare to a local directory.
+2. Change to the directory from step 1 and unzip the image 
+```sh
+gunzip verify-rust.tar.gz
+```
+3. Load the docker image. 
+```sh
+docker load -i verify-rust.tar
+```
+
+### Sanity test
+
+``` sh
+docker rm verify-rust-bench && docker run --name verify-rust-bench  -t verify-rust /bin/bash -c "rm  /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv &&
+python3 /home/usea/verify-rust/benchmark/run_benchmark.py \
+--timeout_sec=1800 \
+--report-file=report.out \
+--mode=testcases \
+--cxx-compiler=clang++-14 \
+--c-compiler=clang-14 \
+--seahorn-root=/home/usea/seahorn \
+--rust-compiler=\$(rustup which rustc) \
+--rust-cargo=\$(rustup which cargo) \
+--testcases test_append,tinyvec-arrayvec &&
+python3 /home/usea/verify-rust/benchmark/run_postprocess.py report.out /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv --overwrite &&
+jupyter nbconvert --to pdf --execute /home/usea/verify-rust/benchmark/postprocess_visualize.ipynb"
+```
+
+#### Expected output
+
+The following output is expected.
+
+```
+...
+============================== PERFORMANCE REPORT ==============================
+
+┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━┑
+│ name                                                                 │ sysenv                  │ job_nodelist   │ pvar              │ punit        │    pval │ presult   │
+┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━┥
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=kani    │ generic:default+builtin │ 024607a1a83f   │ verification_time │ s            │ 3.47112 │ pass      │
+├──────────────────────────────────────────────────────────────────────┼─────────────────────────┼────────────────┼───────────────────┼──────────────┼─────────┼───────────┤
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=kani    │ generic:default+builtin │ 024607a1a83f   │ vcc_generated     │ formula size │    1059 │ pass      │
+├──────────────────────────────────────────────────────────────────────┼─────────────────────────┼────────────────┼───────────────────┼──────────────┼─────────┼───────────┤
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=kani    │ generic:default+builtin │ 024607a1a83f   │ solver_time       │ s            │ 0.41591 │ pass      │
+├──────────────────────────────────────────────────────────────────────┼─────────────────────────┼────────────────┼───────────────────┼──────────────┼─────────┼───────────┤
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=seahorn │ generic:default+builtin │ 024607a1a83f   │ verification_time │ s            │    0.06 │ pass      │
+├──────────────────────────────────────────────────────────────────────┼─────────────────────────┼────────────────┼───────────────────┼──────────────┼─────────┼───────────┤
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=seahorn │ generic:default+builtin │ 024607a1a83f   │ vcc_generated     │ formula size │     158 │ pass      │
+├──────────────────────────────────────────────────────────────────────┼─────────────────────────┼────────────────┼───────────────────┼──────────────┼─────────┼───────────┤
+│ BmcProofTest %test=('test_append', 'tinyvec-arrayvec') %tool=seahorn │ generic:default+builtin │ 024607a1a83f   │ solver_time       │ s            │    0.02 │ pass      │
+┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━┙
+
+Log file(s) saved in '/tmp/rfm-g5qofkxc.log'
+INFO: Unexpected test name format: seahorn_build_tests ~generic:default+builtin. Skipping this testcase.
+INFO: Unexpected test name format: kani_build_tests ~generic:default+builtin. Skipping this testcase.
+INFO: Added to csv_data: ['test_append', 'tinyvec-arrayvec', 'kani', 1059, 0.41591, 3.4711168, 32.524800062179565, 'pass']
+INFO: Added to csv_data: ['test_append', 'tinyvec-arrayvec', 'seahorn', 158, 0.02, 0.06, 6.845367193222046, 'pass']
+INFO: Data successfully written to '/home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv'.
+[NbConvertApp] Converting notebook /home/usea/verify-rust/benchmark/postprocess_visualize.ipynb to pdf
+[NbConvertApp] Support files will be in postprocess_visualize_files/
+[NbConvertApp] Making directory ./postprocess_visualize_files
+[NbConvertApp] Writing 83376 bytes to notebook.tex
+[NbConvertApp] Building PDF
+[NbConvertApp] Running xelatex 3 times: ['xelatex', 'notebook.tex', '-quiet']
+[NbConvertApp] Running bibtex 1 time: ['bibtex', 'notebook']
+[NbConvertApp] WARNING | bibtex had problems, most likely because there were no citations
+[NbConvertApp] PDF successfully created
+[NbConvertApp] Writing 918891 bytes to /home/usea/verify-rust/benchmark/postprocess_visualize.pdf
+```
+
+
+
+#### View graphs
+The command below will copy the pdf file from docker container to the host machine. A pdf viewer can be used to view the file. 
+``` sh
+docker cp verify-rust-bench:/home/usea/verify-rust/benchmark/postprocess_visualize.pdf .
+```
+
+### Generate sample dataset
+
+This only considers tinyvec-arrayvec dataset and takes 3+ hours to run.
+
+``` sh
+docker rm verify-rust-bench && docker run --name verify-rust-bench  -t verify-rust /bin/bash -c "rm /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv &&
+rm /home/usea/verify-rust/benchmark/benchmark_postprocess_aop.csv &&
+python3 /home/usea/verify-rust/benchmark/run_benchmark.py \
+--timeout_sec=1800 \
+--report-file=report.out \
+--mode=suites \
+--cxx-compiler=clang++-14 \
+--c-compiler=clang-14 \
+--seahorn-root=/home/usea/seahorn \
+--rust-compiler=\$(rustup which rustc) \
+--rust-cargo=\$(rustup which cargo) \
+--suite-names=tinyvec-arrayvec &&
+python3 /home/usea/verify-rust/benchmark/run_postprocess.py report.out /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv --overwrite &&
+python3 /home/usea/verify-rust/benchmark/run_benchmark.py \
+--timeout_sec=1800 \
+--report-file=report_aop.out \
+--mode=testcases \
+--cxx-compiler=clang++-14 \
+--c-compiler=clang-14 \
+--seahorn-root=/home/usea/seahorn \
+--rust-compiler=\$(rustup which rustc) \
+--rust-cargo=\$(rustup which cargo) \
+--testcases \$(cat /home/usea/verify-rust/benchmark/aop_vs_eop_benchmarks.txt) &&
+python3 /home/usea/verify-rust/benchmark/run_postprocess.py report_aop.out /home/usea/verify-rust/benchmark/benchmark_postprocess_aop.csv --overwrite
+jupyter nbconvert --to pdf --execute /home/usea/verify-rust/benchmark/postprocess_visualize.ipynb"
+```
+
+#### View graphs
+The command below will copy the pdf file from docker container to the host machine. A pdf viewer can be used to view the file. 
+``` sh
+docker cp verify-rust-bench:/home/usea/verify-rust/benchmark/postprocess_visualize.pdf .
+```
+
+
+### Optional: Generate full dataset
+This runs 83 unit proofs and takes 10+ hours to run.
+We do not run the PANIC-ABORT vs PANI-ERROR benchmarks as they are already run in the sanity test
+
+``` sh
+docker rm verify-rust-bench && docker run --name verify-rust-bench  -t verify-rust /bin/bash -c "rm /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv &&
+python3 /home/usea/verify-rust/benchmark/run_benchmark.py \
+--timeout_sec=1800 \
+--report-file=report_eop.out \
+--mode=testcases \
+--cxx-compiler=clang++-14 \
+--c-compiler=clang-14 \
+--seahorn-root=/home/usea/seahorn \
+--rust-compiler=\$(rustup which rustc) \
+--rust-cargo=\$(rustup which cargo) \
+--testcases \$(cat /home/usea/verify-rust/benchmark/all_benchmarks.txt) &&
+python3 /home/usea/verify-rust/benchmark/run_postprocess.py report_eop.out /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv --overwrite
+jupyter nbconvert --to pdf --execute /home/usea/verify-rust/benchmark/postprocess_visualize.ipynb"
+```
+
+#### View graphs
+The command below will copy the pdf file from docker container to the host machine. A pdf viewer can be used to view the file. 
+``` sh
+docker cp verify-rust-bench:/home/usea/verify-rust/benchmark/postprocess_visualize.pdf .
+```
+
+### To add a new unit proof
+Run the 'add_job' script
+``` sh
+>docker run -it -t verify-rust /bin/bash
+usea@1f62c3531ae0:/tmp/benchmarks 
+$ cd /home/usea/verify-rust/
+usea@1f62c3531ae0:~/verify-rust
+$ scripts/add-job new-unitproof
+Created job: new-unitproof
+usea@1f62c3531ae0:~/verify-rust
+```
