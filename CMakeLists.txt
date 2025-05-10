@@ -48,7 +48,10 @@ configure_file(verify.py.in verify @ONLY)
 set(VERIFY_CMD ${CMAKE_CURRENT_BINARY_DIR}/verify)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/extract_tests.cmake.in extract_tests.cmake @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/extract_unsat_tests.cmake.in extract_unsat_tests.cmake @ONLY)
+
 set(EXTRACT_TEST_CMD ${CMAKE_CURRENT_BINARY_DIR}/extract_tests.cmake)
+set(EXTRACT_UNSAT_TEST_CMD ${CMAKE_CURRENT_BINARY_DIR}/extract_unsat_tests.cmake)
 
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/include)
 include_directories(${SEAHORN_ROOT}/include)

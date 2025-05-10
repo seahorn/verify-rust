@@ -7,7 +7,7 @@ set(LLVM_NM ${SYS_LLVM_NM})
 set(CPP_FILT  ${SYS_CPP_FILT})
 set(AWK ${SYS_AWK})
 
-function(sea_discover_tests_impl TARGET BC VERIFY_CMD)
+function(sea_discover_unsat_tests_impl TARGET BC VERIFY_CMD)
   #sea_get_file_name(BC ${TARGET}.ir)
   #cmake_path(APPEND_STRING TARGET ".ir" BC)
   cmake_path(SET bcpath "${BC}")
@@ -33,21 +33,21 @@ function(sea_discover_tests_impl TARGET BC VERIFY_CMD)
   endif()
 
   # assume that functions starting with testfail_ are sat tests
-  set(AWK_ARGS "{if ((($2 == \"T\") || ($2 == \"t\")) && ($3 ~ /^testfail_.*$/)) {print $3}}")
-  execute_process(COMMAND ${LLVM_NM} ${NM_ARGS} ${BC}
-    COMMAND ${AWK} ${AWK_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    OUTPUT_VARIABLE FAIL_TEST_NAMES
-    )
+  #set(AWK_ARGS "{if ((($2 == \"T\") || ($2 == \"t\")) && ($3 ~ /^testfail_.*$/)) {print $3}}")
+  #execute_process(COMMAND ${LLVM_NM} ${NM_ARGS} ${BC}
+  #  COMMAND ${AWK} ${AWK_ARGS}
+  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  #  OUTPUT_VARIABLE FAIL_TEST_NAMES
+  #  )
 
-  if(FAIL_TEST_NAMES)  # Only proceed if FAIL_TEST_NAMES_LIST is not empty
-    string(REPLACE "\n" ";" FAIL_TEST_NAMES_LIST ${FAIL_TEST_NAMES})  # make a cmake list
-    foreach(TEST_NAME ${FAIL_TEST_NAMES_LIST})
-        file(APPEND ${ctest_file} "add_test(${TARGET}_${TEST_NAME}_sat_test
-              \"${VERIFY_CMD}\" \"--expect=sat\" \"--entry=${TEST_NAME}\" \"${BC}\" )\n")
-        message(STATUS "Added test: ${TARGET}_${TEST_NAME}_sat_test")
-    endforeach()
-  endif()
+  #if(FAIL_TEST_NAMES)  # Only proceed if FAIL_TEST_NAMES_LIST is not empty
+  #  string(REPLACE "\n" ";" FAIL_TEST_NAMES_LIST ${FAIL_TEST_NAMES})  # make a cmake list
+  #  foreach(TEST_NAME ${FAIL_TEST_NAMES_LIST})
+  #      file(APPEND ${ctest_file} "add_test(${TARGET}_${TEST_NAME}_sat_test
+  #            \"${VERIFY_CMD}\" \"--expect=sat\" \"--entry=${TEST_NAME}\" \"${BC}\" )\n")
+  #      message(STATUS "Added test: ${TARGET}_${TEST_NAME}_sat_test")
+  #  endforeach()
+  #endif()
 endfunction()
 
-sea_discover_tests_impl(${TARGET} ${TEST_TARGET} ${VERIFY_CMD})
+sea_discover_unsat_tests_impl(${TARGET} ${TEST_TARGET} ${VERIFY_CMD})

@@ -201,7 +201,7 @@ function(sea_discover_unsat_tests TARGET)
     -D "SYS_LLVM_NM=${LLVM_NM}"
     -D "SYS_AWK=${AWK}"
     -D "SYS_CPP_FILT=${CPP_FILT}"
-    -P ${EXTRACT_TEST_CMD}  # extract tests script
+    -P ${EXTRACT_UNSAT_TEST_CMD}  # extract tests script
     DEPENDS ${BC}
     COMMENT "Writing discovered tests to ${ctest_file}"
     VERBATIM
