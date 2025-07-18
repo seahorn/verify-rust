@@ -23,7 +23,7 @@ The artifact is a docker image that provides unit proof sources for the verify-r
   - CPU: Intel(R) Xeon(R) CPU E5-2680,
   - RAM: 64 GiB,
   - OS: Ubuntu 22.04,
-  - Disk space: 5 GiB, 
+  - Disk space: 7.2 GiB, 
   - Internet connection for downloading docker image,
   - Docker tested only on ubuntu.
 
@@ -36,18 +36,13 @@ These instructions have been tested on the reference Linux system with the follo
 * gunzip -- v1.10
 
 ### Prepare image
-
-1. Download the image archive from figshare to a local directory.
-2. Change to the directory from step 1 and unzip the image 
-```sh
-gunzip verify-rust.tar.gz
-```
-3. Load the docker image. 
+Load the docker image. 
 ```sh
 docker load -i verify-rust.tar
 ```
 
 ### Sanity test
+This will run only one test for seahorn and kani.
 
 ``` sh
 docker rm verify-rust-bench && docker run --name verify-rust-bench  -t verify-rust /bin/bash -c "rm  /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv &&
