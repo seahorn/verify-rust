@@ -43,6 +43,9 @@ docker load -i verify-rust.tar
 
 ### Sanity test
 This will run only one test for seahorn and kani.
+Note that it will take several minutes to setup the tests. Setup involves:
+1. copying the source directory to a temporary directory
+2. compile all seahorn jobs since the seahorn build is setup to build all benchmarks.
 
 ``` sh
 docker rm verify-rust-bench && docker run --name verify-rust-bench  -t verify-rust /bin/bash -c "rm  /home/usea/verify-rust/benchmark/benchmark_postprocess_eop.csv &&
