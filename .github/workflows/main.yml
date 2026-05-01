@@ -14,15 +14,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        #verify_flag: ["", "--vac", "--cex"]
-        verify_flag: [""]
-        #ctest_flag: ["", "--label-exclude=\"skipvac\""]
-        ctest_flag: [""]
-        # exclude:
-        #   - verify_flag: ""
-        #     ctest_flag: "--label-exclude=\"skipvac\""
-        #   - verify_flag: "--cex"
-        #     ctest_flag: "--label-exclude=\"skipvac\""
+        verify_flag: ["", "--vac", "--cex"]
+        ctest_flag: ["", "--label-exclude=\"skipvac\""]
+        exclude:
+          - verify_flag: ""
+            ctest_flag: "--label-exclude=\"skipvac\""
+          - verify_flag: "--cex"
+            ctest_flag: "--label-exclude=\"skipvac\""
+          - verify_flag: "--vac"
+            ctest_flag: ""
     steps:
       - name: Checkout
         uses: actions/checkout@master
