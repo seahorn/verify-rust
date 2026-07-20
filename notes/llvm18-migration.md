@@ -1186,12 +1186,19 @@ but via different functions:
   - So the bug is in ExtraWide's reconstruction of a **pointer-typed load of a cell that
     was written as integer data**: it fabricates a spurious `-1` offset. A correct model
     would treat it as `inttoptr(data) = (base=data, offset=0)`.
-  - **Not fixed here.** Unlike the ptrEq one-liner, this is in the ExtraWide load/memcpy
-    path (a core, widely-used opsem component) and a fix risks unsoundness that can't be
-    validated quickly; it is a spurious `sat` (safe direction), so lower urgency. Fix
-    direction: ExtraWide should not attach a nonzero offset to a pointer materialized from
-    a data (non-pointer-provenance) load; likely tied to how memcpy/copy_from_slice cells
-    carry offset metadata. Open.
+  - **FIXED** in seahorn `8d3980f6`. Root cause pinned to one line:
+    `ExtraWideMemManagerCore::storeIntToMem` wrote raw memory but returned the offset/size
+    shadow memories *unchanged*, so a plain integer store left a **stale offset** from a
+    prior pointer store to the same location; a later `load ptr` reconstructed
+    `(base=data, offset=stale)` → `ptrtoint = data+stale`. Fix: zero the offset shadow on
+    the store (storing an int means the cell holds data → reload is `inttoptr(data)=(data,0)`).
+    Restricted to **pointer-sized** stores to avoid bloating memory-heavy VCs (the wider
+    version timed out 2 near-cap smallvec/tinyvec tests; the narrow guard does not).
+    Validated: borsh-primitives sat→unsat; full suite **198 pass / 14 fail / 1 timeout**
+    (was 197/15/1), no new failures/timeouts.
+  - A minimal standalone SeaHorn lit test could not be reliably constructed — LLVM folds
+    synthetic store-ptr/store-int/load-ptr reproductions (DSE removes the dead pointer
+    store), and the bug needs borsh's real aliasing. borsh-primitives is the regression.
 
 Workaround for borsh-primitives: `--horn-bv2-widemem` makes the full test pass `unsat`
 (global precision change, not flipped in-config). Spurious `sat` throughout (safe
