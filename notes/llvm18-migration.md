@@ -1175,10 +1175,23 @@ but via different functions:
   Rust defect worth fixing regardless).
 - borsh-primitives → **`ptrtoint`** of a fat pointer whose `(base,offset)` is `(x,-1)`.
   `ptrtoint` already uses `getAddressable` (so it correctly yields `base+offset = x-1`);
-  the bug is UPSTREAM — the decoded value `x` wrongly flows through a fat pointer that
-  picks up the slice's `-1` offset during load reconstruction. The ptrEq fix does NOT
-  address this (verified: still `sat` after the fix). Still open — needs deeper opsem
-  work on how ExtraWide reconstructs a value loaded through offset pointer arithmetic.
+  the bug is UPSTREAM. The ptrEq fix does NOT address this (verified: still `sat`).
+  **Traced precisely** (cex on a minimized single-u64 round-trip):
+  - `x` is the nondet input (`%_1072 = nondet.sea_isize`).
+  - u64 decode goes through `core::slice::copy_from_slice` (borsh `from_le_bytes` copies
+    the 8 bytes, then reinterprets). The decoded value is produced by
+    `%_1101 = load ptr, ptr %_1090` — an **opaque `load ptr`** of a cell holding x's
+    bytes — which the ExtraWide model reconstructs as `struct(base=x, offset=-1)`.
+    `%_1148 = ptrtoint %_1146(=%_1101) = bvadd(-1, x) = x-1`, then `icmp eq x, x-1` = false.
+  - So the bug is in ExtraWide's reconstruction of a **pointer-typed load of a cell that
+    was written as integer data**: it fabricates a spurious `-1` offset. A correct model
+    would treat it as `inttoptr(data) = (base=data, offset=0)`.
+  - **Not fixed here.** Unlike the ptrEq one-liner, this is in the ExtraWide load/memcpy
+    path (a core, widely-used opsem component) and a fix risks unsoundness that can't be
+    validated quickly; it is a spurious `sat` (safe direction), so lower urgency. Fix
+    direction: ExtraWide should not attach a nonzero offset to a pointer materialized from
+    a data (non-pointer-provenance) load; likely tied to how memcpy/copy_from_slice cells
+    carry offset metadata. Open.
 
 Workaround for borsh-primitives: `--horn-bv2-widemem` makes the full test pass `unsat`
 (global precision change, not flipped in-config). Spurious `sat` throughout (safe
