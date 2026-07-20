@@ -1,5 +1,4 @@
 #![cfg_attr(not(kani), no_std)]
-#![feature(core_panic)]
 
 use verifier;
 

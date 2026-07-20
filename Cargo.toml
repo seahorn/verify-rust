@@ -16,8 +16,8 @@ opt-level = 2
 inherits="dev"
 rustflags = [
    "-Clinker-plugin-lto", 
-   "-Clinker=clang-14",
-   "-Clink-arg=-fuse-ld=lld-14",
+   "-Clinker=clang-18",
+   "-Clink-arg=-fuse-ld=lld-18",
    "-Zemit-thin-lto=no",
 ]
 
@@ -29,8 +29,8 @@ opt-level = 2
 inherits="release"
 rustflags = [
    "-Clinker-plugin-lto", 
-   "-Clinker=clang-14",
-   "-Clink-arg=-fuse-ld=lld-14",
+   "-Clinker=clang-18",
+   "-Clink-arg=-fuse-ld=lld-18",
    "-Zemit-thin-lto=no"
 ]
 

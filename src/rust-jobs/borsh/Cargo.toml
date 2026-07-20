@@ -17,7 +17,7 @@ path = "lib.rs"
 
 [dependencies]
 # compiler_builtins = { version = "0.1.99", features = ["no-asm"] }
-ahash = "=0.8.6"
+ahash = "=0.8.11"
 borsh = "0.10.3"
 cfg-if = "0.1.10"
 

@@ -1,4 +1,3 @@
-#![feature(is_some_with)]
 #![cfg_attr(not(kani), no_std)]
 use verifier;
 
@@ -15,7 +14,7 @@ pub extern "C" fn entrypt() {
         None
     };
 
-    let result: bool = value.is_some_and(|num: &i32| *num > 0);
+    let result: bool = value.is_some_and(|num: i32| num > 0);
 
     verifier::vassert!(result == false);
 }
