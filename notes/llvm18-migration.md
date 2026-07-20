@@ -1133,14 +1133,44 @@ the panic abstraction.** Minimized `entrypt` to a single round-trip and bisected
 | `u128`, `i128` | timeout |
 
 So the abstraction is fine (u32 round-trips correctly under it); the `sat` appears at the
-**≥64-bit boundary**. Since borsh `u64` encode/decode is a mathematical bijection
-(`x.try_to_vec()` then `u64::try_from_slice` must return `x`), a `sat` there **cannot be
-real** — it is SeaHorn imprecision (spurious, safe direction). This is the same family as
-the custom-vec **byte-granular memory / wide-int** dev18 issues (u32=4 bytes reconstructs
-fine, u64=8 bytes loses precision at the word boundary). The panic abstraction merely made
-borsh-primitives fast enough to *reach* these wide-int verdicts; it did not cause them.
-So borsh-primitives is a genuine (separate) dev18 wide-int precision bug to fix alongside
-the other Class 3 cases — the panic-abstraction work is correct and complete.
+**≥64-bit boundary** (u32 unsat, u64 sat, u128/i128 timeout).
+
+**FULLY ROOT-CAUSED: it is the ExtraWide memory-manager bug — the SAME one as sea-vec
+test_zst ptrEq.** From the u64 counterexample (`--cex` on a minimized single-u64
+round-trip):
+
+```
+decoded = %_72 = ptrtoint ptr %_70          [borsh reconstructs the value via a pointer]
+%_70    = struct(base = main@%_4_0 (=x), offset = 0xffffffffffffffff (= -1), ...)
+%_72    = bvadd(0xffffffffffffffff, x)  =  x - 1      -> decoded = x-1 != x -> sat
+```
+
+The decoded u64 is reconstructed by `ptrtoint` of a fat pointer whose ExtraWide
+`(base, offset)` is `(x, -1)`; ptrtoint yields `base + offset = x - 1`. The `-1` offset
+comes from a `getelementptr i8, ptr, i64 -1` (a one-past-end rewind in the borsh/std slice
+decode under LLVM 18 — the same shape as sea-vec `next_back`'s `end - 1`). So the value
+`x` is (wrongly) flowing through the fat-pointer representation and picking up the slice's
+-1 offset.
+
+Confirmed ExtraWide-specific by the same differential that pinned the ptrEq bug:
+
+| memory manager | single u64 | full borsh-primitives |
+|---|---|---|
+| `--horn-bv2-extra-widemem` (our config) | **sat** | sat |
+| `--horn-bv2-widemem` | **unsat** | **unsat** |
+
+Since borsh `u64` encode/decode is a bijection, the `sat` **cannot be real** — it is
+SeaHorn imprecision (spurious, safe direction). It is NOT caused by the panic abstraction
+(u32 round-trips unsat under it); the abstraction merely made the job fast enough to reach
+the verdict.
+
+**This is the SAME SeaHorn bug as sea-vec test_zst** (`BvOpSem2ExtraWideMemMgr`: the
+`(base, offset)` split leaking through ptrEq / ptrtoint when LLVM 18 emits `gep i8 -1`).
+Fixing that manager fixes both. Workaround: `--horn-bv2-widemem` makes the full
+borsh-primitives pass `unsat` — but it is a global precision/representation change (drops
+pointer-size tracking), so not flipped in-config here; recorded as the actionable lever.
+The panic-abstraction work is correct and complete; borsh-primitives is a pre-existing
+SeaHorn ExtraWide-manager bug, now fully characterized.
 
 ### CMake incremental test-discovery bug — FIXED
 
