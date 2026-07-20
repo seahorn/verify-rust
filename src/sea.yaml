@@ -16,8 +16,10 @@ verify_options:
 # do not instrument library functions with memory assertions 
 # context-sensitive type-aware alias analysis 
   dsa: sea-cs-t
-# weak support for function pointers. sea-dsa is better but less stable
-  devirt-functions: 'types'
+# sea-dsa selects callees via points-to analysis; 'types' matches ALL functions of
+# the same signature, which under LLVM 18 opaque pointers over-matches catastrophically
+# (hundreds of functions collapse to `i1 (ptr, ptr)` etc.) and makes inline-all explode.
+  devirt-functions: 'sea-dsa'
 # bit-precise memory-precise operational semantics
   bmc: opsem
   horn-vcgen-use-ite: ''
@@ -28,7 +30,7 @@ verify_options:
 # static allocator supports symbolic allocation size
   sea-opsem-allocator: static
 # stack allocation from a symbolic starting point
-  horn-explicit-sp0: false
+  horn-explicit-sp0: true  # was false; concrete stack base avoids symbolic-stack byte-split blowup under LLVM18 (see notes)
 # lambdas for memory
   horn-bv2-lambdas: ''
 # use z3 simplifier during vcgen
