@@ -1164,13 +1164,26 @@ SeaHorn imprecision (spurious, safe direction). It is NOT caused by the panic ab
 (u32 round-trips unsat under it); the abstraction merely made the job fast enough to reach
 the verdict.
 
-**This is the SAME SeaHorn bug as sea-vec test_zst** (`BvOpSem2ExtraWideMemMgr`: the
-`(base, offset)` split leaking through ptrEq / ptrtoint when LLVM 18 emits `gep i8 -1`).
-Fixing that manager fixes both. Workaround: `--horn-bv2-widemem` makes the full
-borsh-primitives pass `unsat` — but it is a global precision/representation change (drops
-pointer-size tracking), so not flipped in-config here; recorded as the actionable lever.
-The panic-abstraction work is correct and complete; borsh-primitives is a pre-existing
-SeaHorn ExtraWide-manager bug, now fully characterized.
+**Same manager family as sea-vec test_zst, but a DISTINCT proximate sub-bug.** Both are
+`BvOpSem2ExtraWideMemMgr` leaking the `(base,offset)` split under LLVM 18's `gep i8 -1`,
+but via different functions:
+- sea-vec test_zst → **`ptrEq`** (componentwise `base==base && offset==offset`).
+  **FIXED** in seahorn `d7277faa` (compare `getAddressable`, i.e. `base+offset`, mirroring
+  `ptrNe`). Both regression lit tests pass; no regression across 123 pointer-heavy
+  verify-rust tests. This also makes the sea-vec Rust `wrapping_byte_*` provenance
+  workaround redundant at the SeaHorn level (kept anyway — exposed-provenance is a real
+  Rust defect worth fixing regardless).
+- borsh-primitives → **`ptrtoint`** of a fat pointer whose `(base,offset)` is `(x,-1)`.
+  `ptrtoint` already uses `getAddressable` (so it correctly yields `base+offset = x-1`);
+  the bug is UPSTREAM — the decoded value `x` wrongly flows through a fat pointer that
+  picks up the slice's `-1` offset during load reconstruction. The ptrEq fix does NOT
+  address this (verified: still `sat` after the fix). Still open — needs deeper opsem
+  work on how ExtraWide reconstructs a value loaded through offset pointer arithmetic.
+
+Workaround for borsh-primitives: `--horn-bv2-widemem` makes the full test pass `unsat`
+(global precision change, not flipped in-config). Spurious `sat` throughout (safe
+direction); not caused by the panic abstraction. The panic-abstraction work is correct
+and complete.
 
 ### CMake incremental test-discovery bug — FIXED
 
