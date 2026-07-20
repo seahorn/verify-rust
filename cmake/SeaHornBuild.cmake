@@ -5,11 +5,16 @@ endfunction()
 # Generate target to compile C files, link with Rust library, and produce LLVM IR
 # The Rust library is expected to be called ${TARGET}-lib
 function(c_rust_llvm TARGET SRC_FILES)
-    set(RUST_LIB_TARGET ${TARGET}-lib)
+    # Cargo package name, e.g. `add-lib`.
+    set(RUST_LIB_PACKAGE ${TARGET}-lib)
+    # Corrosion names its CMake target after the *cargo lib target*, not the
+    # package. Cargo derives the lib target name from the package name by
+    # replacing `-` with `_`, so the CMake target is e.g. `add_lib`.
+    string(REPLACE "-" "_" RUST_LIB_TARGET ${RUST_LIB_PACKAGE})
 
     # XXX all Rust libraries are loaded together from the workspace
-    corrosion_import_crate(MANIFEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml 
-                           CRATES ${RUST_LIB_TARGET}
+    corrosion_import_crate(MANIFEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
+                           CRATES ${RUST_LIB_PACKAGE}
                            PROFILE dev-seahorn)
 
 
@@ -89,13 +94,38 @@ function(c_rust_llvm TARGET SRC_FILES)
     SET(BC_FILE ${TARGET}_llvm.bc)
     SET(LL_FILE ${TARGET}_llvm.ll)
 
-    add_custom_command(
-        OUTPUT  ${BC_FILE}
-        COMMAND ${LLVM_OBJCOPY} ARGS ${CMAKE_CURRENT_BINARY_DIR}/${TARGET} --dump-section .llvmbc=${BC_FILE}
-        DEPENDS ${TARGET}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Copying llvm bitcode sections from executable for ${TARGET}"
-    )
+    # Optional panic abstraction: override rust_begin_unwind with a verifier stub
+    # so the Rust panic/message-formatting runtime becomes dead (GlobalDCE strips
+    # it), fixing devirt+inline blow-ups on std jobs (e.g. borsh). Opt-in per job:
+    #   ABSTRACT_PANIC        -> abort-on-panic (assume false)
+    #   ABSTRACT_PANIC_ERROR  -> error-on-panic (verifier error)
+    # No token -> no override -> bitcode identical to before (no_std jobs keep
+    # their own #[panic_handler]).
+    set(PANIC_OVERRIDE_BC "")
+    if ("ABSTRACT_PANIC_ERROR" IN_LIST ARGN)
+      set(PANIC_OVERRIDE_BC ${PANIC_ABSTRACT_ERROR_BC})
+    elseif ("ABSTRACT_PANIC" IN_LIST ARGN)
+      set(PANIC_OVERRIDE_BC ${PANIC_ABSTRACT_ABORT_BC})
+    endif()
+
+    if (PANIC_OVERRIDE_BC)
+      add_custom_command(
+          OUTPUT  ${BC_FILE}
+          COMMAND ${LLVM_OBJCOPY} ARGS ${CMAKE_CURRENT_BINARY_DIR}/${TARGET} --dump-section .llvmbc=${BC_FILE}
+          COMMAND ${SEA_LINK} ARGS ${BC_FILE} --override=${PANIC_OVERRIDE_BC} -o ${BC_FILE}
+          DEPENDS ${TARGET} ${PANIC_OVERRIDE_BC} panic-abstract-stubs
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+          COMMENT "Extracting bitcode + abstracting panic (rust_begin_unwind) for ${TARGET}"
+      )
+    else()
+      add_custom_command(
+          OUTPUT  ${BC_FILE}
+          COMMAND ${LLVM_OBJCOPY} ARGS ${CMAKE_CURRENT_BINARY_DIR}/${TARGET} --dump-section .llvmbc=${BC_FILE}
+          DEPENDS ${TARGET}
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+          COMMENT "Copying llvm bitcode sections from executable for ${TARGET}"
+      )
+    endif()
 
     add_custom_command(
         OUTPUT  ${LL_FILE}
@@ -155,7 +185,14 @@ function(sea_discover_tests TARGET)
   sea_get_file_name(BC ${TARGET}.ir)
   cmake_path(SET bcpath "${BC}")
   cmake_path(GET bcpath PARENT_PATH bc_dir_path)
-  cmake_path(APPEND bc_dir_path "CTestTestfile.cmake" OUTPUT_VARIABLE ctest_file)
+  # NOTE: write discovered tests to a DEDICATED file, never CMake's own
+  # CTestTestfile.cmake. CMake auto-generates CTestTestfile.cmake per build
+  # subdir at configure time and, because it points TEST_INCLUDE_FILES here,
+  # would emit `include("<this dir>/CTestTestfile.cmake")` -- a self-include
+  # causing "Maximum recursion depth exceeded". Using a separate file makes
+  # CMake's CTestTestfile.cmake include THIS file instead (no recursion), and
+  # survives reconfigures that don't re-trigger discovery.
+  cmake_path(APPEND bc_dir_path "${TARGET}_ctest_tests.cmake" OUTPUT_VARIABLE ctest_file)
   string(CONCAT target_ir ${TARGET} ".ir")
   add_custom_command(
     OUTPUT ${ctest_file}
@@ -189,7 +226,8 @@ function(sea_discover_unsat_tests TARGET)
   sea_get_file_name(BC ${TARGET}.ir)
   cmake_path(SET bcpath "${BC}")
   cmake_path(GET bcpath PARENT_PATH bc_dir_path)
-  cmake_path(APPEND bc_dir_path "CTestTestfile.cmake" OUTPUT_VARIABLE ctest_file)
+  # See note in sea_discover_tests: dedicated file, not CTestTestfile.cmake.
+  cmake_path(APPEND bc_dir_path "${TARGET}_ctest_tests.cmake" OUTPUT_VARIABLE ctest_file)
   string(CONCAT target_ir ${TARGET} ".ir")
   add_custom_command(
     OUTPUT ${ctest_file}
