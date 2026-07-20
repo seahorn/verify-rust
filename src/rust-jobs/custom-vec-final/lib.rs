@@ -707,7 +707,7 @@ impl<T> RawValIter<T> {
         RawValIter {
             start: slice.as_ptr(),
             end: if mem::size_of::<T>() == 0 {
-                ((slice.as_ptr() as usize) + slice.len()) as *const _
+                slice.as_ptr().wrapping_byte_add(slice.len())
             } else if slice.len() == 0 {
                 slice.as_ptr()
             } else {
@@ -727,7 +727,7 @@ impl<T> Iterator for RawValIter<T> {
                 let pointer: *const T;
                 if mem::size_of::<T>() == 0 {
                     pointer = NonNull::<T>::dangling().as_ptr();
-                    self.start = (self.start as usize + 1) as *const _;
+                    self.start = self.start.wrapping_byte_add(1);
                 } else {
                     pointer = self.start;
                     self.start = self.start.offset(1);
@@ -755,7 +755,7 @@ impl<T> DoubleEndedIterator for RawValIter<T> {
         } else {
             unsafe {
                 let pointer: *const T = if mem::size_of::<T>() == 0 {
-                    self.end = (self.end as usize - 1) as *const _;
+                    self.end = self.end.wrapping_byte_sub(1);
                     NonNull::<T>::dangling().as_ptr()
                 } else {
                     self.end = self.end.offset(-1);
@@ -835,7 +835,7 @@ impl<T> Drop for IntoIter<T> {
                 }
                 if mem::size_of::<T>() == 0 {
                     ptr::drop_in_place(NonNull::<T>::dangling().as_ptr());
-                    self.iter.start = (self.iter.start as usize + 1) as *const _;
+                    self.iter.start = self.iter.start.wrapping_byte_add(1);
                     
                 } else {
                     ptr::drop_in_place(self.iter.start as *mut T);

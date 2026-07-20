@@ -113,7 +113,7 @@ impl<T> RawValIter<T> {
         RawValIter {
             start: slice.as_ptr(),
             end: if mem::size_of::<T>() == 0 {
-                ((slice.as_ptr() as usize) + slice.len()) as *const _
+                slice.as_ptr().wrapping_byte_add(slice.len())
             } else if slice.len() == 0 {
                 slice.as_ptr()
             } else {
@@ -133,7 +133,7 @@ impl<T> Iterator for RawValIter<T> {
                 let result = ptr::read(self.start);
                 let old_ptr = self.start;
                 self.start = if mem::size_of::<T>() == 0 {
-                    (self.start as usize + 1) as *const _
+                    self.start.wrapping_byte_add(1)
                 } else {
                     self.start.offset(1)
                 };
@@ -157,7 +157,7 @@ impl<T> DoubleEndedIterator for RawValIter<T> {
         else {
             unsafe {
                 if mem::size_of::<T>() == 0 {
-                    self.end = (self.end as usize - 1) as *const _;
+                    self.end = self.end.wrapping_byte_sub(1);
                     // Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
                 } else {
                     self.end = self.end.offset(-1);
