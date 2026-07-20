@@ -5,7 +5,7 @@ extern crate alloc;
 use alloc::string::String;
 #[no_mangle]
 #[cfg_attr(kani, kani::proof)]
-fn entrypt() {
+pub extern "C" fn entrypt() {
     let x: i32   = verifier::any!();
     let y: i32 = verifier::any!();
     verifier::assume!(y == 0);

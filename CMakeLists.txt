@@ -15,7 +15,7 @@ FetchContent_Declare(
 )
 
 # Our preferred toolchian for which fat lto works
-set(Rust_TOOLCHAIN nightly-2022-08-01)
+set(Rust_TOOLCHAIN nightly-2024-07-01)
 
 # Set any global configuration variables such as `Rust_TOOLCHAIN` before this line!
 FetchContent_MakeAvailable(Corrosion)
@@ -26,17 +26,17 @@ enable_testing()
 
 include(SeaHornBuild)
 find_program(AWK awk mawk gawk)
-find_program(DEFAULT_LLVM_NM llvm-nm-14)
+find_program(DEFAULT_LLVM_NM llvm-nm-18)
 find_program(CPP_FILT c++filt)
 
 set(SEAHORN_ROOT "" CACHE PATH "Path to SeaHorn installation")
-set(SEA_LINK "llvm-link-14" CACHE STRING "Path to llvm-link")
+set(SEA_LINK "llvm-link-18" CACHE STRING "Path to llvm-link")
 set(SEA_OPT "${SEAHORN_ROOT}/bin/seaopt" CACHE STRING "Path to seaopt binary")
 set(SEA_PP "${SEAHORN_ROOT}/bin/seapp" CACHE STRING "Path to seapp binary")
 
-set(LLVM_OBJCOPY "llvm-objcopy-14" CACHE STRING "Path to llvm-objcopy")
-set(LLVM_DIS "llvm-dis-14" CACHE STRING "Path to llvm-dis")
-set(LLD "lld-14" CACHE STRING "Path to lld")
+set(LLVM_OBJCOPY "llvm-objcopy-18" CACHE STRING "Path to llvm-objcopy")
+set(LLVM_DIS "llvm-dis-18" CACHE STRING "Path to llvm-dis")
+set(LLD "lld-18" CACHE STRING "Path to lld")
 set(LLVM_NM ${DEFAULT_LLVM_NM} CACHE PATH "Path to llvm-nm")
 
 set(LLVMIR_LINK ${SEA_LINK})
