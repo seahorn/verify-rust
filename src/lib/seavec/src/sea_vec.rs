@@ -264,7 +264,7 @@ impl<T> RawValIter<T> {
         RawValIter {
             start: slice.as_ptr(),
             end: if T::IS_ZST {
-                ((slice.as_ptr() as usize) + slice.len()*mem::align_of::<T>()) as *const _
+                slice.as_ptr().wrapping_byte_add(slice.len()*mem::align_of::<T>())
             } else if slice.len() == 0 {
                 slice.as_ptr()
             } else {
@@ -282,7 +282,7 @@ impl<T> Iterator for RawValIter<T> {
         } else {
             unsafe {
                 if T::IS_ZST {
-                    self.start = (self.start as usize + 1*mem::align_of::<T>()) as *const _;
+                    self.start = self.start.wrapping_byte_add(1*mem::align_of::<T>());
                     Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
                 } else {
                     let old_ptr = self.start;
@@ -308,7 +308,7 @@ impl<T> DoubleEndedIterator for RawValIter<T> {
         } else {
             unsafe {
                 if T::IS_ZST {
-                    self.end = (self.end as usize - 1*mem::align_of::<T>()) as *const _;
+                    self.end = self.end.wrapping_byte_sub(1*mem::align_of::<T>());
                     Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
                 } else {
                     self.end = self.end.offset(-1);
