@@ -1,5 +1,10 @@
 # Building the LLVM 14 stack on Ubuntu 24.04 (noble)
 
+[FACT] Every build failure documented here is a version-skew problem between a
+pinned-old component (LLVM 14) and a moving-newer distro, not a SeaHorn bug. The
+fixes are stable environment reality, re-verified building on this host.
+→ see the three numbered symptoms below (`-lstdc++`, `libpolly`, `z3`).
+
 The `README.md` build instructions assume Ubuntu 22.04 (jammy), which is what the
 CI Docker image (`seahorn/seahorn-llvm14:nightly`) is. On a 24.04 host everything
 is still *installable* — `clang-14`, `lld-14`, `llvm-14-dev`, `libpolly-14-dev`

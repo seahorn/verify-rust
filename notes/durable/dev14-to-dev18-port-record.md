@@ -1,10 +1,29 @@
 # Moving from SeaHorn dev14 to dev18
 
-Status: **builds, does not pass.** The LLVM 14 baseline is captured (208/213, red
-set == the CI blacklist exactly) and the LLVM 18 switch is made — verify-rust
-compiles clean against dev18, 435/435 targets. But **25 tests that were green under
-dev14 are red under dev18**, in three distinct classes. See
-[Result against dev18](#result-against-dev18-25-new-failures).
+> **btf note.** This is the pre-better-than-fish migration record, imported
+> whole. Its *structural* claims (bitcode version-coupling, the five pin sites,
+> the three failure classes) are durable `[FACT]`s. Its *pass/fail counts* are a
+> point-in-time snapshot and have since moved — the current verdicts live in the
+> journal, e.g. journal/2026-07/2026-07-23-blacklist-whitelist-two-dev14-timeouts.md.
+> `[OPEN]` this doc exceeds the durable length cap and is a distillation
+> candidate — see loose-ends/parked.md.
+
+[FACT] The project's contract with SeaHorn is LLVM bitcode, which is version-
+coupled in both directions: rustc's bundled LLVM and clang both emit `.bc` that
+SeaHorn's LLVM must read, so all three must agree on the LLVM major version. The
+version is pinned in five places that must move together (rust-toolchain.toml,
+CMakeLists.txt Corrosion channel, CMakeLists.txt llvm-* tool paths, Cargo.toml
+linker flags, CMakePresets.json / CI compiler). → table below.
+
+[SUPERSEDED → journal/2026-07/2026-07-23-blacklist-whitelist-two-dev14-timeouts.md]
+Status snapshot: **builds, does not pass.** The LLVM 14 baseline is captured
+(208/213, red set == the CI blacklist exactly) and the LLVM 18 switch is made —
+verify-rust compiles clean against dev18, 435/435 targets. But **25 tests that
+were green under dev14 are red under dev18**, in three distinct classes. See
+[Result against dev18](#result-against-dev18-25-new-failures). (These counts are
+the initial-port snapshot; the ExtraWide `ptrEq`/`storeIntToMem` fixes,
+`devirt=sea-dsa`, `explicit-sp0`, and the panic abstraction have since resolved
+most — later journal entries carry the live numbers.)
 
 The headline for anyone picking this up: *every problem encountered getting it to
 **build** was a Rust/C toolchain problem, not a SeaHorn one. Every problem that
