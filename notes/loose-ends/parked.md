@@ -2,6 +2,63 @@
 
 Backlog of started-or-considered work not currently pursued. Five-field format.
 
+## Root-cause the symbolic-count vacuity in crates.io smallvec bulk ops
+
+**Status:** parked 2026-07-24 (investigation started, not finished)
+**Context:** A symbolic count reaching `resize`/`extend`/`append`/`drain`/
+   `insert_many` in crates.io smallvec makes everything after the call
+   unreachable, so the tests pass `unsat` while proving nothing. Ruled out:
+   the bound (vacuous at 2/3/4), the test code (byte-identical to non-vacuous
+   twins in `smallvec-allocation-bound2`), `checked_next_power_of_two`, symbolic
+   *values*, and `push`/`truncate`/`new`. Pre-existing on dev14, so not a port
+   regression. The pipeline's `-fat-bnd-check` adds 156 hard
+   `assume(sea.is_dereferenceable(..))`; one of those (or another hard assume) is
+   presumed false on the surviving path, but which one is **not identified**.
+   The vec provably never spills, no panic is reachable, backedge assertions pass.
+**Why parked:** black-box bisection is exhausted; the next step is
+   SeaHorn-internals work (identify the false assume on the surviving path),
+   which is a different kind of task.
+**To resume:** use the 6-line reproducer in the journal entry. Diagnostics that
+   exist: `--enable-fat-vacuity-check=true` (per-location bounds-check vacuity),
+   `--keep-temps --temp-dir=DIR` (note `-S` makes `.bc` files text). Compare the
+   surviving path constraints against the vendored smallvec build, which does
+   reach its assertions with the same test.
+**Effort estimate:** ~half-day+, needs SeaHorn opsem familiarity.
+**References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
+
+## Flag the 6 unflagged vacuous tests in blacklist.vac.txt
+
+**Status:** parked 2026-07-24
+**Context:** The vacuity audit found 9 fully-vacuous green tests. Only 3 are in
+   `.github/workflows/blacklist.vac.txt` (`result-unwrap_or_else`,
+   `smallvec-bound2 test_resize`/`test_resize2`). Unflagged: `smallvec-bound2`
+   `test_append`, `test_drain`, `test_insert_many`, `test_resize_with`,
+   `test_resize_with2`, plus `custom-vec-zst-alignment-issue`. They pass the
+   unsat CI run while proving nothing.
+**Why parked:** flagging them in the vac blacklist only records the problem;
+   the real work is making them non-vacuous (see next entry). Also an
+   outward-facing CI change, wants a deliberate decision.
+**To resume:** decide per test — fix (preferred) or flag. If flagging, add the
+   CI test names to `blacklist.vac.txt` with the journal entry as justification.
+**Effort estimate:** ~15 min to flag; see next entry for fixing.
+**References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
+
+## Resolve the 8 vacuity-audit TIMEOUTs
+
+**Status:** parked 2026-07-24
+**Context:** 8 bounded tests could not be classified within the 90-100s per-test
+   budget: `smallvec/test_insert_from_slice`, `smallvec-allocation-bound2/`
+   `{test_drain,test_insert_many}`, `smallvec-bound4/test_push`,
+   `tinyvec-arrayvec{,-aop}/{test_retain,test_splice}`. Notably
+   `tinyvec-arrayvec/test_retain` is one of the two tests whitelisted on
+   2026-07-23, so its non-vacuity is asserted but not proven.
+**Why parked:** each needs minutes of solver time; the cheap majority was done
+   first.
+**To resume:** re-run `./build-18/verify --vac --entry=<e> <bc>` with a 600-900s
+   budget, one at a time. Record reach/vacuous counts in the audit journal.
+**Effort estimate:** ~1-2 h wall-clock, mostly unattended.
+**References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
+
 ## Make cfg-simplify's assertion survive -O3
 
 **Status:** parked 2026-07-23

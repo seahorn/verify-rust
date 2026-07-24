@@ -55,14 +55,26 @@ a fixed concrete address (cex showed `0xbfffffd0`) regardless of requested size 
 `v.capacity() == cap` is refuted spuriously. Not an ExtraWide bug of the kind
 fixed this session. → src/rust-jobs/smallvec-allocation/lib.rs::test_with_capacity
 
+[SUPERSEDED → 2026-07-24-vacuity-audit-of-all-unsat-tests.md]
 [OBS 2026-07-23] `smallvec-allocation_test_insert_from_slice_unsat_test` →
 spurious `sat`; "failed" on dev14 too. Same class of unbounded-allocation /
 static-allocator modeling limitation.
+**Corrected 2026-07-24:** its inputs are already bounded (`len <= 8`,
+`len+len2 <= 8`), so it is NOT the same class as `test_with_capacity`. Under the
+job's `bound: 16` the `sat` is a real, non-vacuous counterexample (4.35s solve,
+assertions reachable). Open question is whether it is a genuine defect or an
+inline-buffer aliasing artifact — the cex shows `v`/`v2` 48 bytes apart on the
+stack.
 
+[SUPERSEDED → 2026-07-24-vacuity-audit-of-all-unsat-tests.md]
 [HYP 2026-07-23] Bounding the symbolic inputs in the two smallvec tests (e.g.
 `assume!(cap <= 16)`) would make the modeled allocation representable and flip
 them to `unsat` — untested, and it changes what the test verifies, so it's a
 deliberate test edit, not a silent whitelist.
+**Why I was misled:** I read `sat`/`unsat` verdicts without ever checking
+reachability. Dropping the bound appeared to "fix" 21 entries in ~1s, but those
+unsats were vacuous — loops never unrolled, no assertion reachable. The bound is
+required, not the problem.
 
 ## Why this matters
 
