@@ -2,28 +2,27 @@
 
 Backlog of started-or-considered work not currently pursued. Five-field format.
 
-## Root-cause the symbolic-count vacuity in crates.io smallvec bulk ops
+## Pin down which fat bounds-check assume prunes Extend-for-SmallVec
 
-**Status:** parked 2026-07-24 (investigation started, not finished)
-**Context:** A symbolic count reaching `resize`/`extend`/`append`/`drain`/
-   `insert_many` in crates.io smallvec makes everything after the call
-   unreachable, so the tests pass `unsat` while proving nothing. Ruled out:
-   the bound (vacuous at 2/3/4), the test code (byte-identical to non-vacuous
-   twins in `smallvec-allocation-bound2`), `checked_next_power_of_two`, symbolic
-   *values*, and `push`/`truncate`/`new`. Pre-existing on dev14, so not a port
-   regression. The pipeline's `-fat-bnd-check` adds 156 hard
-   `assume(sea.is_dereferenceable(..))`; one of those (or another hard assume) is
-   presumed false on the surviving path, but which one is **not identified**.
-   The vec provably never spills, no panic is reachable, backedge assertions pass.
-**Why parked:** black-box bisection is exhausted; the next step is
-   SeaHorn-internals work (identify the false assume on the surviving path),
-   which is a different kind of task.
-**To resume:** use the 6-line reproducer in the journal entry. Diagnostics that
-   exist: `--enable-fat-vacuity-check=true` (per-location bounds-check vacuity),
-   `--keep-temps --temp-dir=DIR` (note `-S` makes `.bc` files text). Compare the
-   surviving path constraints against the vendored smallvec build, which does
-   reach its assertions with the same test.
-**Effort estimate:** ~half-day+, needs SeaHorn opsem familiarity.
+**Status:** parked 2026-07-24 (root cause found; last mile remains)
+**Context:** ROOT CAUSE IS KNOWN: `-fat-bnd-check` prunes the path. `sea bpf`
+   (no fat instrumentation) proves the same assertion non-vacuously
+   (`assertion passed`), while `sea fpf` reports `vacuity failed` on identical
+   bitcode/flags. Trigger is `Extend for SmallVec` with a **symbolic element
+   count**; `resize`/`append`/`drain`/`insert_many` inherit it. Ruled out: the
+   bound (be_fail=0, loops proven bounded), the memory manager (extra-widemem ==
+   widemem), `checked_next_power_of_two`, symbolic values, `push`/`truncate`/
+   `reserve`, and a standalone `NonNull` round-trip. Pre-existing on dev14.
+**Why parked:** the remaining step is identifying *which* instrumented access
+   carries the undischargeable `assume(sea.is_dereferenceable(..))` — SeaHorn
+   internals work rather than black-box bisection.
+**To resume:** bisect with `--no-fat-fns <mangled-name>,...` to exclude candidate
+   functions from instrumentation until the vacuity clears; that names the
+   offending access. Diagnostics: `--enable-fat-vacuity-check=true` (per-location
+   report), `--keep-temps --temp-dir=DIR` (with `-S` the `.bc` files are text).
+   Minimal repro is in the journal entry (`test_probe_extend_sym_count`).
+   Cross-check any fix against `sea bpf`, which already proves the property.
+**Effort estimate:** ~half-day, needs SeaHorn opsem/instrumentation familiarity.
 **References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
 
 ## Flag the 6 unflagged vacuous tests in blacklist.vac.txt
