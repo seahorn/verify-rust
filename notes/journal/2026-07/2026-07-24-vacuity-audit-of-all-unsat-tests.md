@@ -113,14 +113,57 @@ crates.io smallvec's **heap/spill** paths — `lib.rs:722` (`heap()` accessor),
 For an inline-only `CAP=2` vec those *should* be dead, so they are consistent
 with correct modelling and do not by themselves explain the failure.
 
-[OPEN] The property assertion after `resize` remains unreachable even with the
-fat vacuity check enabled (`vacuity failed (unsat)` on the job's own vassert
-line, verdict `unsat`). So: the vec provably never spills, no panic path is
-reachable, no loop exceeds its bound (backedge assertions pass) — and yet the
-statement after `resize` cannot be reached. The specific constraint that kills
-the path is **not yet identified**. Continuing this needs SeaHorn-internals
-debugging (which assume is false on the surviving path), not more black-box
-bisection. Parked in loose-ends/parked.md.
+## ROOT CAUSE: the fat bounds-check instrumentation prunes the path
+
+[FACT] `-fat-bnd-check` is what makes these tests vacuous. Same bitcode, same
+flags, same entry — only the pipeline differs:
+
+| pipeline | `fat-bnd-check` | result on the minimal repro |
+|---|---|---|
+| `sea bpf` | absent | `vacuity passed (sat)` + **`assertion passed (unsat)`** |
+| `sea fpf` | present | `vacuity failed (unsat)` — vacuous |
+
+So the property **is provable** — `bpf` proves it non-vacuously. The `fpf`
+pipeline's hard `assume(sea.is_dereferenceable(ptr, n))` cannot be discharged for
+the symbolic-offset write inside `Extend for SmallVec`, so every path dies before
+the assertion. Verify with:
+
+```bash
+SEA=<seahorn>/build-rel/run/bin/sea
+$SEA bpf <same flags> --entry=test_probe_extend_sym_count <bc>   # assertion passed
+$SEA fpf <same flags> --entry=test_probe_extend_sym_count <bc>   # vacuity failed
+```
+
+[FACT] The primitive trigger is `Extend for SmallVec` with a **symbolic element
+count**. `resize`/`append`/`drain`/`insert_many` are vacuous because they all
+route through it. Non-vacuous with the same fat pipeline: `push` (even in a
+symbolic-trip-count loop), `truncate(sym)`, `reserve(sym)`, `extend` with a
+concrete count, and `resize` with a literal.
+
+[OBS 2026-07-24] Not loop cutting: at bound 2 and 4 the minimal repro reports
+`be_fail=0, be_pass=2` — loops fully unrolled and proven bounded — while the
+assertion stays unreachable.
+
+[OBS 2026-07-24] Not the memory manager: `--horn-bv2-extra-widemem` and
+`--horn-bv2-widemem` are identically vacuous.
+
+[SUPERSEDED → refuted below] [HYP] crates.io smallvec ≥1.11 wraps buffer pointers
+in `NonNull` (`NonNull::new(..).unwrap()` in `inline_mut`) where the vendored copy
+uses raw `*mut T`, and the fat bounds metadata is lost across that round-trip.
+**Refuted:** a standalone probe writing at a symbolic offset through a
+`NonNull::new(p).unwrap()` round-trip is non-vacuous (LLVM folds the trivial
+case). The `NonNull` difference is real but not sufficient on its own.
+
+[OPEN] Which specific instrumented access inside `Extend` has the undischargeable
+`is_dereferenceable` assume is still unidentified. Next step: use
+`--no-fat-fns <mangled>` to exclude candidate functions from instrumentation and
+bisect until the vacuity clears. Parked in loose-ends/parked.md.
+
+[OBS 2026-07-24] Consequence for the suite: any job verified through `fpf` whose
+code performs symbolic-offset writes behind an iterator abstraction may be
+silently vacuous. The audit's `--vac` sweep is the way to detect it; `bpf` is a
+cross-check that distinguishes "property is false" from "instrumentation pruned
+the path".
 
 ### Minimal reproducer (6 lines)
 
