@@ -2,27 +2,29 @@
 
 Backlog of started-or-considered work not currently pursued. Five-field format.
 
-## Pin down which fat bounds-check assume prunes Extend-for-SmallVec
+## Why does instrumenting dead code (try_grow) kill a live assertion?
 
-**Status:** parked 2026-07-24 (root cause found; last mile remains)
-**Context:** ROOT CAUSE IS KNOWN: `-fat-bnd-check` prunes the path. `sea bpf`
-   (no fat instrumentation) proves the same assertion non-vacuously
-   (`assertion passed`), while `sea fpf` reports `vacuity failed` on identical
-   bitcode/flags. Trigger is `Extend for SmallVec` with a **symbolic element
-   count**; `resize`/`append`/`drain`/`insert_many` inherit it. Ruled out: the
-   bound (be_fail=0, loops proven bounded), the memory manager (extra-widemem ==
-   widemem), `checked_next_power_of_two`, symbolic values, `push`/`truncate`/
-   `reserve`, and a standalone `NonNull` round-trip. Pre-existing on dev14.
-**Why parked:** the remaining step is identifying *which* instrumented access
-   carries the undischargeable `assume(sea.is_dereferenceable(..))` — SeaHorn
-   internals work rather than black-box bisection.
-**To resume:** bisect with `--no-fat-fns <mangled-name>,...` to exclude candidate
-   functions from instrumentation until the vacuity clears; that names the
-   offending access. Diagnostics: `--enable-fat-vacuity-check=true` (per-location
-   report), `--keep-temps --temp-dir=DIR` (with `-S` the `.bc` files are text).
-   Minimal repro is in the journal entry (`test_probe_extend_sym_count`).
-   Cross-check any fix against `sea bpf`, which already proves the property.
-**Effort estimate:** ~half-day, needs SeaHorn opsem/instrumentation familiarity.
+**Status:** parked 2026-07-25 (fully localised; one SeaHorn question remains)
+**Context:** Localisation is DONE. `-fat-bnd-check` is the cause (`sea bpf`, the
+   same pipeline minus that stage, proves the assertion non-vacuously). Delta-
+   debugging over 916 functions minimises the culprit to exactly two:
+   `SmallVec::reserve_one_unchecked` and `SmallVec::try_grow` — excluding both via
+   `--no-fat-fns` gives a real proof, excluding either alone does not.
+   `reserve_one_unchecked` exists only in newer smallvec, which is why the
+   vendored job verifies and the crates.io job does not.
+   The paradox: `try_grow`'s body is provably **unreachable** here (CAP=2, n<=2
+   never spills; the fat-vacuity map marks its lines vacuous) and no bounds check
+   is violated (verdict `unsat`) — yet instrumenting that dead branch makes a
+   later, live assertion unreachable. Adding checks to dead code must not affect
+   live paths.
+**Why parked:** the remaining question is internal to SeaHorn's encoding, not
+   discoverable by more black-box bisection.
+**To resume:** test the standing hypothesis — that the mixed-semantics (`ms`)
+   stage plus `--horn-step=large` lets a contradiction from a dead branch enter
+   the merged path formula. Try `--horn-step=small`, and diff the `ms`-stage
+   output with and without the two functions instrumented. Repro and exact
+   commands are in the journal entry.
+**Effort estimate:** ~half-day, needs SeaHorn opsem/mixed-semantics familiarity.
 **References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
 
 ## Flag the 6 unflagged vacuous tests in blacklist.vac.txt

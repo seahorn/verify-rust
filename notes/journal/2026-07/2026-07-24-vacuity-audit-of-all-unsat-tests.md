@@ -154,10 +154,58 @@ uses raw `*mut T`, and the fat bounds metadata is lost across that round-trip.
 `NonNull::new(p).unwrap()` round-trip is non-vacuous (LLVM folds the trivial
 case). The `NonNull` difference is real but not sufficient on its own.
 
-[OPEN] Which specific instrumented access inside `Extend` has the undischargeable
-`is_dereferenceable` assume is still unidentified. Next step: use
-`--no-fat-fns <mangled>` to exclude candidate functions from instrumentation and
-bisect until the vacuity clears. Parked in loose-ends/parked.md.
+### `--no-fat-fns` bisection: the culprit is exactly two functions
+
+[FACT] Delta-debugging over the 916 defined functions (oracle: does excluding a
+set from fat instrumentation make the assertion reachable?) minimises to **exactly
+two** functions, both on the heap-growth path:
+
+```
+smallvec::SmallVec<A>::reserve_one_unchecked
+smallvec::SmallVec<A>::try_grow
+```
+
+Excluding **both** → `vacuity passed (sat)` + `assertion passed (unsat)`, a real
+proof. Excluding **either one alone** → still vacuous. Verified directly:
+
+```bash
+$SEA fpf <flags> --no-fat-fns="<reserve_one_unchecked>,<try_grow>" bc   # NONVAC
+$SEA fpf <flags> --no-fat-fns="<reserve_one_unchecked>"           bc   # VACUOUS
+$SEA fpf <flags> --no-fat-fns="<try_grow>"                        bc   # VACUOUS
+```
+
+Bisection path: all 916 → 22 `smallvec` fns → items 12-22 → neither half alone
+(⇒ multiple culprits) → greedy per-element minimisation → the pair above.
+`try_reserve`, `shrink_to_fit`, `push`, `drain`, `append`, `resize`, `as_slice`
+were each shown *not* required.
+
+[FACT] `reserve_one_unchecked` exists only in newer smallvec (present in 1.13.2,
+**absent** from the vendored copy in `smallvec-allocation-bound2` — `grep -c` = 0).
+That is why the vendored job proves the same tests while the crates.io job cannot:
+the vendored copy has no `reserve_one_unchecked`, and its `try_reserve` was
+rewritten to avoid the growth computation entirely.
+
+[FACT] Inside `try_grow` the instrumentation emits `is_dereferenceable` **checks**
+that branch to `verifier.error` (0 `verifier.assume`, 1 `verifier.error` in the
+function body) — safety assertions, not assumptions. So the earlier "hard assume
+prunes the path" wording is imprecise: in `main` and in these functions the fat
+instrumentation is a *check*, and its failure would be `sat`.
+
+### The paradox that pins the defect
+
+[FACT] `try_grow`'s body is **itself unreachable** in this test — the
+`--enable-fat-vacuity-check=true` location map reports `vacuity failed (unsat)`
+for `lib.rs:1176/1182/1184/1206/1207` (all inside `try_grow`). With `CAP=2` and
+`n <= 2` the vector provably never spills, and the overall verdict is `unsat`,
+so no bounds check is violated either.
+
+[OPEN] **Instrumenting a provably-unreachable branch changes the reachability of a
+later, reachable assertion.** That should be impossible: adding checks to dead
+code must not affect the feasibility of live paths. This is the crisp statement of
+the defect for a SeaHorn maintainer. Prime suspect is the interaction of the
+instrumentation with the mixed-semantics (`ms`) stage and `--horn-step=large`,
+where a contradiction contributed by a dead branch can make the merged path
+formula infeasible — **untested hypothesis**, and the next thing to check.
 
 [OBS 2026-07-24] Consequence for the suite: any job verified through `fpf` whose
 code performs symbolic-offset writes behind an iterator abstraction may be
