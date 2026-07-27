@@ -202,10 +202,60 @@ so no bounds check is violated either.
 [OPEN] **Instrumenting a provably-unreachable branch changes the reachability of a
 later, reachable assertion.** That should be impossible: adding checks to dead
 code must not affect the feasibility of live paths. This is the crisp statement of
-the defect for a SeaHorn maintainer. Prime suspect is the interaction of the
-instrumentation with the mixed-semantics (`ms`) stage and `--horn-step=large`,
-where a contradiction contributed by a dead branch can make the merged path
-formula infeasible — **untested hypothesis**, and the next thing to check.
+the defect for a SeaHorn maintainer.
+
+[SUPERSEDED → refuted] [HYP] The mixed-semantics (`ms`) stage plus
+`--horn-step=large` lets a dead-branch contradiction into the merged path formula.
+**Refuted 2026-07-27:** the option is `--step` (not `--horn-step`), and
+`--step=small` is identically vacuous (`job_vac_failed=1`, `unsat`). Note `ms` is
+in the `bpf` pipeline too, which works — so `ms` alone was never a candidate.
+
+[OBS 2026-07-27] Not an allocation artefact either: the final IR contains **zero**
+`malloc`/`__rust_alloc`/`realloc` calls with or without the pair instrumented. The
+only difference is 24 extra `is_dereferenceable` checks (124 vs 100) and ~500 IR
+lines.
+
+## MUTATION TEST — the vacuity is real and it MISSES BUGS
+
+[FACT] This is the decisive result. Take the minimal repro and break the
+assertion (`v.len() == n + 1`, which is false — the length is `n`). Under the
+**default CI configuration** SeaHorn reports `unsat` / `Result TRUE`: it "proves"
+a false property. The same mutation is caught (`sat`) once the two functions are
+excluded from fat instrumentation, and caught by `bpf`.
+
+| entry | `fpf` (CI default) | `fpf --no-fat-fns=<pair>` | `bpf` |
+|---|---|---|---|
+| mutant, assertion FALSE | **`unsat` — bug MISSED** | `sat` — caught | `sat` — caught |
+| true property (`len == n`) | `unsat` | `unsat` | `unsat` |
+
+Two consequences:
+
+1. These tests are not merely "weak" — they would pass if smallvec were
+   arbitrarily broken. A green `smallvec-bound2` run carries **zero** assurance.
+2. The excluded-pair configuration is a **working workaround**: it catches the
+   injected bug *and* still proves the true property, so it is not simply
+   weakening the check.
+
+[FACT] Reproduce the mutation test:
+
+```rust
+#[no_mangle]
+fn test_probe_extend_MUTANT() {
+    const CAP: usize = 2;
+    let mut v: SmallVec<[u32; CAP]> = SmallVec::new();
+    let n: usize = verifier::any!();
+    verifier::assume!(n <= CAP);
+    let x: u32 = verifier::any!();
+    v.extend(core::iter::repeat(x).take(n));
+    verifier::vassert!(v.len() == n + 1);   // FALSE
+}
+```
+`./build-18/verify --expect=sat --entry=test_probe_extend_MUTANT <bc>` → reports
+`unsat`, i.e. the injected bug is missed.
+
+[OBS 2026-07-27] Mutation testing should be the standard acceptance check when
+fixing any of these jobs: a test that cannot fail is not a test. `--vac` detects
+the condition cheaply; a mutant proves it.
 
 [OBS 2026-07-24] Consequence for the suite: any job verified through `fpf` whose
 code performs symbolic-offset writes behind an iterator abstraction may be
