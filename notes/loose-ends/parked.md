@@ -17,14 +17,22 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
    is violated (verdict `unsat`) — yet instrumenting that dead branch makes a
    later, live assertion unreachable. Adding checks to dead code must not affect
    live paths.
+   A MUTATION TEST proves this is not cosmetic: with a deliberately false
+   assertion the default CI config reports `unsat` (bug MISSED), while
+   `--no-fat-fns=<pair>` and `bpf` both catch it (`sat`). So the config has a
+   real bug-missing defect, and the exclusion is a working workaround that still
+   proves the true property.
 **Why parked:** the remaining question is internal to SeaHorn's encoding, not
    discoverable by more black-box bisection.
-**To resume:** test the standing hypothesis — that the mixed-semantics (`ms`)
-   stage plus `--horn-step=large` lets a contradiction from a dead branch enter
-   the merged path formula. Try `--horn-step=small`, and diff the `ms`-stage
-   output with and without the two functions instrumented. Repro and exact
-   commands are in the journal entry.
-**Effort estimate:** ~half-day, needs SeaHorn opsem/mixed-semantics familiarity.
+**To resume:** ruled out so far — `--step=small` (identical vacuity; note the
+   flag is `--step`, not `--horn-step`), and allocation (zero malloc/realloc in
+   the final IR either way). The only delta is 24 extra `is_dereferenceable`
+   checks (124 vs 100). Next: diff those 24 check sites against the excluded
+   build and find which one's guard makes the post-call state infeasible; then
+   look at how `fat-bnd-check` threads bounds metadata through a call whose
+   callee is instrumented vs not. Use the mutation test as the acceptance check
+   for any fix.
+**Effort estimate:** ~half-day, needs SeaHorn opsem/instrumentation familiarity.
 **References:** journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
 
 ## Flag the 6 unflagged vacuous tests in blacklist.vac.txt
