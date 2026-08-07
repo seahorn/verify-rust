@@ -4,7 +4,8 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
 
 ## Upgrade kani and cross-check against SeaHorn
 
-**Status:** parked 2026-08-07 (version bump edited but UNCOMMITTED and UNVERIFIED)
+**Status:** part (2) DONE 2026-08-07 (sweep run, see journal); part (1) bump
+   still UNCOMMITTED
 **Context:** Two parts. (1) The committed kani pin is 0.43.0 in
    `docker/verify-rust.Dockerfile` (`--version ^0.43`) and
    `benchmark/reframe_test.py` (`KANI_VERSION`), carrying `nightly-2023-12-14`
@@ -30,8 +31,15 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
    Budget a per-harness timeout; 286 CBMC runs over vector code will not be
    quick, and expect genuine disagreements (kani needs `#[kani::unwind]` where
    SeaHorn uses `bound:`).
-**Effort estimate:** ~1h for the version bump; part (2) is open-ended, likely a
-   day including triage of disagreements.
+**Update 2026-08-07:** the sweep is done — 275 harnesses, no case where seabmc
+   fails and kani passes; 7 genuine kani failures (4 are harnesses missing
+   `kani::should_panic`, 3 are checks seabmc does not perform). The `--locked`
+   flag is REQUIRED on `cargo install kani-verifier` and is missing from the
+   uncommitted reframe_test.py edit. The rust-toolchain workaround removal is
+   now confirmed safe. Remaining: 15 harnesses timed out and 10 hit the memory
+   cap; re-run those with a larger budget if the numbers matter.
+**Effort estimate:** ~1h for the version bump; ~2h to clear the 25
+   resource-limited harnesses.
 **References:** durable/kani-version-to-rust-toolchain-map.md,
    journal/2026-08/2026-08-07-ci-ported-to-dev18.md
 
@@ -96,6 +104,11 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
    2026-07-23, so its non-vacuity is asserted but not proven.
 **Why parked:** each needs minutes of solver time; the cheap majority was done
    first.
+**Update 2026-08-07:** one of the 8 is resolved. `smallvec-allocation-bound2/
+   test_insert_many` is **NOT vacuous** — 9 reachable assertions, 0 vacuous,
+   including all four properties (lib.rs:2283-2286) and 5 bounded backedges. It
+   needed **483s** (429s of it in `opsem.vacuity`), which is why the 90s budget
+   missed it. 7 left.
 **To resume:** re-run `./build-18/verify --vac --entry=<e> <bc>` with a 600-900s
    budget, one at a time. Record reach/vacuous counts in the audit journal.
 **Effort estimate:** ~1-2 h wall-clock, mostly unattended.

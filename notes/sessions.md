@@ -19,6 +19,10 @@ Chronological index of significant sessions and what they produced. Newest first
 - journal/2026-08/2026-08-07-ci-ported-to-dev18.md — CI port + first run.
 - durable/kani-version-to-rust-toolchain-map.md — kani 0.53.0 bundles exactly
   `nightly-2024-07-01`.
+- journal/2026-08/2026-08-07-kani-vs-seabmc-sweep.md — full 275-harness kani vs
+  seabmc comparison. No case where seabmc fails and kani passes; 7 genuine kani
+  failures, 4 of them harnesses missing `kani::should_panic`. The committed
+  benchmark CSVs are superseded (their disagreements do not reproduce).
 
 **Critical corrections:**
 - I wrote that opaque pointers changed SeaHorn's fat-pointer representation.
@@ -32,6 +36,13 @@ Chronological index of significant sessions and what they produced. Newest first
   *run creation* is a platform tell, not a configuration tell.
 - I reported `option-unwrap-or` as `sat` after the fix; I had restored the source
   but not rebuilt the bitcode, so the mutant was still in it.
+- I ran the kani sweep at 8 workers; a single cbmc takes 22-30GB, so the box
+  OOM-killed tmux and the agent. I misread the resulting dead jobs as session
+  teardown three times before checking dmesg. Cap with `ulimit -v`.
+- My first sweep tally counted 32 disagreements. 25 were my own timeout and
+  memory limits: a CBMC resource abort also prints `VERIFICATION:- FAILED`.
+- `pkill -f "<pattern>"` twice killed the shell running it, because the pattern
+  text is in that shell's own command line. Use the `swee[p].sh` bracket form.
 
 **Status:** complete apart from the merge of `52f0369`.
 
