@@ -128,8 +128,17 @@ fn test_clear() {
 
     v.clear();
 
-    verifier::vassert!(v.len() == 0);
-    verifier::vassert!(v.capacity() == 8);
+    // `expected_*` are opaque to rustc: they are tied to the concrete values
+    // only through verifier::assume!, an extern "C" call the front end cannot
+    // see through. Comparing against literals lets LLVM 18 fold these to `true`
+    // before SeaHorn runs, leaving nothing to prove.
+    let expected_len: usize = verifier::any!();
+    let expected_cap: usize = verifier::any!();
+    verifier::assume!(expected_len == 0);
+    verifier::assume!(expected_cap == 8);
+
+    verifier::vassert!(v.len() == expected_len);
+    verifier::vassert!(v.capacity() == expected_cap);
 }
 
 #[no_mangle]
@@ -241,6 +250,8 @@ fn test_extend_from_slice() {
 
     verifier::assume!(len1 <= CAP);
     verifier::assume!(len2 <= CAP);
+    // extend_from_slice panics if the combined length would exceed capacity.
+    verifier::assume!(len1 + len2 <= CAP);
 
     for _i in 0..len1 {
         v1.push(verifier::any!());
@@ -249,6 +260,14 @@ fn test_extend_from_slice() {
     for _i in 0..len2 {
         v2.push(verifier::any!());
     }
+
+    v1.extend_from_slice(v2.as_slice());
+
+    // `expected_len` is opaque to rustc (tied to len1+len2 only through an
+    // extern "C" assume), so the assertion survives to BMC.
+    let expected_len: usize = verifier::any!();
+    verifier::assume!(expected_len == len1 + len2);
+    verifier::vassert!(v1.len() == expected_len);
 }
 
 
@@ -277,13 +296,12 @@ fn test_from_array_empty() {
     const CAP : usize = 8;
     let v: ArrayVec<[u32; CAP]> = ArrayVec::from_array_empty([0; CAP]);
 
-    verifier::vassert!(v.len() == 0);
-
-    // Necessary to make seahorn work.
-    let x: u32 = verifier::any!();
-    verifier::assume!(x < u32::MAX/2);
-    let result: u32 = x * 2;
-    verifier::vassert!(result >= x);
+    // `expected_len` is opaque to rustc (tied to 0 only through an extern "C"
+    // assume), so the assertion survives to BMC instead of folding to `true`.
+    // This replaces the old `x * 2 >= x` keep-alive, which LLVM 18 also folds.
+    let expected_len: usize = verifier::any!();
+    verifier::assume!(expected_len == 0);
+    verifier::vassert!(v.len() == expected_len);
 }
 
 #[no_mangle]
@@ -321,13 +339,12 @@ fn test_from_array_len() {
     if len <= CAP {
         let v: ArrayVec<[u32; CAP]> = ArrayVec::from_array_len([0; CAP], len);
 
-        verifier::vassert!(v.len() == len);
-
-        // Necessary to make seahorn work.
-        let x: u32 = verifier::any!();
-        verifier::assume!(x < u32::MAX/2);
-        let result: u32 = x * 2;
-        verifier::vassert!(result >= x);
+        // `expected_len` is opaque to rustc (tied to `len` only through an
+        // extern "C" assume), so the assertion survives to BMC instead of
+        // folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
+        let expected_len: usize = verifier::any!();
+        verifier::assume!(expected_len == len);
+        verifier::vassert!(v.len() == expected_len);
     }
 }
 
@@ -428,14 +445,16 @@ fn test_new() {
     const CAP: usize = 4;
     let v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
-    verifier::vassert!(v.len() == 0);
-    verifier::vassert!(v.capacity() == CAP);
+    // `expected_*` are opaque to rustc (tied to the concrete values only
+    // through extern "C" assumes), so the assertions survive to BMC instead of
+    // folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
+    let expected_len: usize = verifier::any!();
+    let expected_cap: usize = verifier::any!();
+    verifier::assume!(expected_len == 0);
+    verifier::assume!(expected_cap == CAP);
 
-    // Necessary to make seahorn work.
-    let x: u32 = verifier::any!();
-    verifier::assume!(x < u32::MAX/2);
-    let result: u32 = x * 2;
-    verifier::vassert!(result >= x);
+    verifier::vassert!(v.len() == expected_len);
+    verifier::vassert!(v.capacity() == expected_cap);
 }
 
 #[no_mangle]
@@ -779,8 +798,16 @@ fn test_set_len() {
     verifier::assume!(len <= CAP);
     v.set_len(len);
 
-    verifier::vassert!(v.len() == len);
-    verifier::vassert!(v.capacity() == CAP);
+    // `expected_*` are opaque to rustc (tied to the concrete values only
+    // through extern "C" assumes), so the assertions survive to BMC instead of
+    // folding to `true`.
+    let expected_len: usize = verifier::any!();
+    let expected_cap: usize = verifier::any!();
+    verifier::assume!(expected_len == len);
+    verifier::assume!(expected_cap == CAP);
+
+    verifier::vassert!(v.len() == expected_len);
+    verifier::vassert!(v.capacity() == expected_cap);
 
 }
 
@@ -1077,18 +1104,18 @@ fn test_try_from_array_len() {
 
     let v: Result<ArrayVec<[u32; 8]>, _>  = ArrayVec::try_from_array_len([0; 8], len);
 
-    if len <= 8 {
-        verifier::vassert!(v.is_ok());
-        verifier::vassert!(v.unwrap().len() == len);
-    } else {
-        verifier::vassert!(v.is_err());
-    }
+    // `expect_ok`/`expected_len` are opaque to rustc (tied to the concrete
+    // values only through extern "C" assumes), so the assertions survive to BMC
+    // instead of folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
+    let expect_ok: bool = verifier::any!();
+    verifier::assume!(expect_ok == (len <= 8));
+    verifier::vassert!(v.is_ok() == expect_ok);
 
-    // Necessary to make seahorn work.
-    let x: u32 = verifier::any!();
-    verifier::assume!(x < u32::MAX/2);
-    let result: u32 = x * 2;
-    verifier::vassert!(result >= x);
+    if len <= 8 {
+        let expected_len: usize = verifier::any!();
+        verifier::assume!(expected_len == len);
+        verifier::vassert!(v.unwrap().len() == expected_len);
+    }
 }
 
 #[no_mangle]

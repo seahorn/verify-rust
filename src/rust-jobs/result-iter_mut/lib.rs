@@ -9,11 +9,20 @@ pub extern "C" fn entrypt() {
     verifier::assume!(x < i32::MAX/2);
     verifier::assume!(x > i32::MIN/2);
     let res = iter_mut(x);
+
+    // `expected` is opaque to rustc: it is tied to `x` only through
+    // verifier::assume!, which is an extern "C" call the front end cannot see
+    // through. Asserting against `x` directly lets LLVM 18 inline `iter_mut`,
+    // correlate the two uses of `x >= 0`, and fold the assertion to `true`
+    // before SeaHorn runs.
+    let expected: i32 = verifier::any!();
     if x >= 0 {
-        verifier::vassert!(res == x);
+        verifier::assume!(expected == x);
     } else {
-        verifier::vassert!(res == x*2);
+        verifier::assume!(expected == x*2);
     }
+
+    verifier::vassert!(res == expected);
 }
 
 #[no_mangle]

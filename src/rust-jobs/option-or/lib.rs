@@ -18,10 +18,17 @@ pub extern "C" fn entrypt() {
 
     let result: i32 = val1.or(val2).unwrap();
 
+    // `expected` is opaque to rustc: it is tied to `v`/`w` only through
+    // verifier::assume!, which is an extern "C" call the front end cannot see
+    // through. Asserting against `v`/`w` directly lets LLVM 18 correlate the two
+    // uses of `(v & 1)` and fold the assertion to `true` before SeaHorn runs.
+    let expected: i32 = verifier::any!();
     if (v & 1) == 0 {
-        verifier::vassert!(result == v);
+        verifier::assume!(expected == v);
     } else {
-        verifier::vassert!(result == w);
+        verifier::assume!(expected == w);
     }
+
+    verifier::vassert!(result == expected);
     // panic!();
 }
