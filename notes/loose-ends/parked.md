@@ -2,6 +2,39 @@
 
 Backlog of started-or-considered work not currently pursued. Five-field format.
 
+## Upgrade kani and cross-check against SeaHorn
+
+**Status:** parked 2026-08-07 (version bump edited but UNCOMMITTED and UNVERIFIED)
+**Context:** Two parts. (1) The committed kani pin is 0.43.0 in
+   `docker/verify-rust.Dockerfile` (`--version ^0.43`) and
+   `benchmark/reframe_test.py` (`KANI_VERSION`), carrying `nightly-2023-12-14`
+   against a repo pinned to `nightly-2024-07-01`. **Kani 0.53.0 bundles exactly
+   `nightly-2024-07-01`** — see durable/kani-version-to-rust-toolchain-map.md
+   for the full map and how to verify it. Both files hold uncommitted
+   working-tree edits doing the bump and dropping the rust-toolchain workaround;
+   nothing about them has been run. (2) Cross-check: do the jobs SeaHorn proves
+   also verify under kani? There are **286 `kani::proof` harnesses across 64
+   jobs** (`grep -rc "kani::proof" src/rust-jobs/*/lib.rs`).
+**Why parked:** interrupted mid-task. Also gated on tooling: kani, CBMC and
+   ReFrame are all absent from this workspace, so part (2) needs
+   `cargo install kani-verifier --version 0.53.0` + `cargo-kani setup` (large
+   download) before it can start.
+**To resume:** first decide whether to keep the uncommitted edits, then verify
+   them — the dropped `rm -f rust-toolchain.toml` + `rustup override set 1.81.0`
+   workaround is the risky part ([HYP]: redundant once kani's toolchain matches
+   the repo's; untested). Reuse the existing
+   utilities rather than writing new ones: `run_benchmark.py::get_kani_tests`
+   enumerates harnesses per job, and `reframe_test.py::BmcProofTest.prepare_test`
+   already holds the harness→ctest-name mapping
+   (`{dir}_{harness}` + `_sat_test`/`_unsat_test`, `entrypt` → bare `{dir}`).
+   Budget a per-harness timeout; 286 CBMC runs over vector code will not be
+   quick, and expect genuine disagreements (kani needs `#[kani::unwind]` where
+   SeaHorn uses `bound:`).
+**Effort estimate:** ~1h for the version bump; part (2) is open-ended, likely a
+   day including triage of disagreements.
+**References:** durable/kani-version-to-rust-toolchain-map.md,
+   journal/2026-08/2026-08-07-ci-ported-to-dev18.md
+
 ## Why does instrumenting dead code (try_grow) kill a live assertion?
 
 **Status:** parked 2026-07-25 (fully localised; one SeaHorn question remains)
@@ -81,8 +114,14 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
    depend on an opaque nondet value that survives `-O3` (e.g. relate `sentinel`
    to a second `verifier::any!()` under an assume). Rebuild the job, confirm
    `unsat` with a real assertion, then remove from `.github/workflows/blacklist.txt`.
+   **Update 2026-08-07:** that fix pattern is no longer a guess — it was applied
+   to 11 tests and verified (unsat, non-vacuous, mutants caught). Copy it from
+   journal/2026-08/2026-08-07-rustc-folds-assertions-under-llvm18.md. Note the
+   fold happens in *rustc*, not seahorn's `-O3`, so check the pre-opt
+   `<job>_llvm.ll` to confirm the assertion survives before running seahorn.
 **Effort estimate:** ~20 min.
-**References:** journal/2026-07/2026-07-23-blacklist-whitelist-two-dev14-timeouts.md
+**References:** journal/2026-07/2026-07-23-blacklist-whitelist-two-dev14-timeouts.md,
+   journal/2026-08/2026-08-07-rustc-folds-assertions-under-llvm18.md
 
 ## Bound smallvec-allocation tests so the static allocator can model them
 

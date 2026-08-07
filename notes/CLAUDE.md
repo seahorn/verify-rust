@@ -34,6 +34,19 @@ verification command with every `[FACT]`. `sat`/`unsat` claims must say whether
 the proof is non-vacuous (assertion markers survive) — a "no assertion found"
 pass is not a proof.
 
+## Two ways an `unsat` can be worthless
+
+Both are live in this repo; check for both before trusting a green test.
+
+1. **Folded** — rustc's LLVM 18 proves the property and emits
+   `__VERIFIER_assert(i1 true)`; SeaHorn reports "no assertion was found".
+   Fails loudly. → journal/2026-08/2026-08-07-rustc-folds-assertions-under-llvm18.md
+2. **Vacuous** — the assertion is unreachable, so `unsat` is empty. Passes
+   silently. → journal/2026-07/2026-07-24-vacuity-audit-of-all-unsat-tests.md
+
+`./build-18/verify --vac --entry=<e> <bc>` distinguishes them; a mutation test
+(inject a false assertion, expect `sat`) is the acceptance check.
+
 ## Code / build anchors for citations
 
 - verify-rust repo: `/home/siddharth/seahorn/verify-rust`
