@@ -2,6 +2,40 @@
 
 Chronological index of significant sessions and what they produced. Newest first.
 
+## 2026-08-08 — EoP made the default; panic-override linkage bug fixed
+
+**Session:** `llvm18-port` (session `10a63551`, continued).
+**Theme:** Act on the kani sweep's finding that seabmc's abort-on-panic mode
+assumes panic-class defects away.
+
+**Key outputs:**
+- `072dcb5` — 20 no_std jobs converted to error-on-panic; 13 more that declared
+  `panic_error` without the CMake token (silently AoP) now get it. 3 jobs found
+  reachable panics and became `sea_add_sat_test`, each keeping a `-aop` twin.
+- `60a1010` — `KEEP_EXTERNAL` on the four primitives in `sea-lib/seahorn.c`.
+  LTO was internalizing them, so `llvm-link --override` renamed the definition
+  and SeaHorn stopped recognising the error site. Unblocks EoP for std jobs:
+  all 12 that previously said "no assertion was found" now verify.
+- durable/panic-modes-aop-vs-eop.md, journal/2026-08/2026-08-08-eop-conversion-
+  and-override-linkage-bug.md.
+
+**Critical corrections:**
+- I attributed the verifier-primitive definitions to `sea-lib/src/bindings.rs`;
+  it only declares them. They live in `sea-lib/seahorn.c`.
+- I proposed and reported as working a fix where the stub defines rather than
+  declares the primitives. It does not work — I grepped for `__VERIFIER_error.2`
+  and got 0, but the symbol had been renamed `.4`. Match `\.[0-9]+`.
+- I first tried `ABSTRACT_PANIC_ERROR` on the std jobs without understanding the
+  linkage, broke 8 of 12, and had to revert before finding the real cause.
+
+**Status:** complete; suite 216/4 (all pre-existing failures).
+
+**Next-session pickup candidates:**
+- `--vac` the 12 std jobs to check EoP is doing real work there.
+- Root-cause the two unexplained sat findings (custom-vec-raw_vec,
+  custom-vec-zst-alignment-issue).
+- Merge `52f0369`; commit or drop the uncommitted kani 0.53 bump.
+
 ## 2026-08-07 — Port merged to main; CI on dev18; Class 1 failures fixed
 
 **Session:** `llvm18-port` (session `10a63551`, continued).
