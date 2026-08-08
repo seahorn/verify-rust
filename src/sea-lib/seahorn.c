@@ -14,13 +14,21 @@
 
 #define INLINE __attribute__((always_inline))
 
-void __VERIFIER_error(void) { return; }
+// KEEP_EXTERNAL: these four are the symbols the panic-abstraction stub
+// (panic_abstract.c) references via llvm-link --override. If LTO internalizes
+// them, the stub's external reference collides with the internal definition and
+// llvm-link renames the definition to __VERIFIER_error.N -- after which SeaHorn
+// no longer recognises the branch target as an error site and reports
+// "no assertion was found". `used` + default visibility keeps them external.
+#define KEEP_EXTERNAL __attribute__((used, visibility("default")))
 
-void __VERIFIER_assume(int i) { return; }
+KEEP_EXTERNAL void __VERIFIER_error(void) { return; }
 
-void __SEA_assume(bool b) { return; }
+KEEP_EXTERNAL void __VERIFIER_assume(int i) { return; }
 
-void __VERIFIER_assert(bool pred) { return; }
+KEEP_EXTERNAL void __SEA_assume(bool b) { return; }
+
+KEEP_EXTERNAL void __VERIFIER_assert(bool pred) { return; }
 
 int8_t sea_nd_i8(void) { return 0; }
 uint8_t sea_nd_u8(void) { return 0; }

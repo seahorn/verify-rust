@@ -1,3 +1,3 @@
-c_rust_llvm(copy_stack_buffer copy_stack_buffer.c)
+c_rust_llvm(copy_stack_buffer copy_stack_buffer.c ABSTRACT_PANIC_ERROR)
 
 sea_add_unsat_test(copy_stack_buffer)
