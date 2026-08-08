@@ -1,3 +1,3 @@
-c_rust_llvm(mut_ref_on_stack mut_ref_on_stack.c)
+c_rust_llvm(mut_ref_on_stack mut_ref_on_stack.c CUSTOM_PANIC_NO_STD)
 
 sea_add_unsat_test(mut_ref_on_stack)
