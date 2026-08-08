@@ -3,6 +3,16 @@
 version = 3
 
 [[package]]
+name = "add-eop-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "add-lib"
 version = "0.1.0"
 dependencies = [
@@ -1027,6 +1037,26 @@ checksum = "5ad948c1cb799b1a70f836077721a92a35ac177d4daddf4c20a633786d4cf618"
 dependencies = [
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "vec-eop-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
+name = "vec-filter-eop-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
 ]
 
 [[package]]
