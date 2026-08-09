@@ -18,7 +18,10 @@ def load_tests():
 class kani_build_tests(rfm.CompileOnlyRegressionTest):
     build_system = 'CustomBuild'
     #test = parameter(TESTS)
-    KANI_VERSION = '0.43.0'
+    # 0.53.0 bundles nightly-2024-07-01, which is exactly the channel pinned in
+    # rust-toolchain.toml. Keep these two in step: a kani release with a
+    # different bundled toolchain needs the rust-toolchain.toml workaround back.
+    KANI_VERSION = '0.53.0'
 
     @run_before('compile')
     def prepare_build(self):
@@ -26,9 +29,12 @@ class kani_build_tests(rfm.CompileOnlyRegressionTest):
         self.env_vars['PATH'] = f'kani/bin/:{os.environ["PATH"]}'
         # TODO: codegen for all passed directories
         self.build_system.commands = [
-            'rm -f rust-toolchain.toml',
-            'rustup override set 1.81.0',
-            f'cargo install kani-verifier --root $PWD/kani --version {self.KANI_VERSION}',
+            # --locked is required, not cosmetic: without it cargo re-resolves
+            # kani's dependencies to today's newest semver-compatible versions,
+            # which pulls home 0.5.12 (edition2024, needs cargo >= 1.85) and
+            # fails to parse under this 1.81 toolchain. The shipped lockfile
+            # pins home 0.5.9, which builds.
+            f'cargo install --locked kani-verifier --root $PWD/kani --version {self.KANI_VERSION}',
             f'kani/bin/cargo-kani --only-codegen --manifest-path src/rust-jobs/tinyvec-arrayvec/Cargo.toml',
             'kani/bin/cargo-kani --version'
         ]

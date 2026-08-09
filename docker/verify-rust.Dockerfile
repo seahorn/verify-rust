@@ -27,7 +27,11 @@ RUN bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -
 RUN rustup install nightly-2024-07-01
 RUN rustup +nightly-2024-07-01 component add rust-src
 RUN cargo +nightly-2024-07-01 install --locked --force cbindgen --version ^0.26
-RUN cargo install --locked kani-verifier --version ^0.43 ## latest version to work with Rust 1.64
+## 0.53.0 bundles nightly-2024-07-01, exactly the channel in rust-toolchain.toml
+## (both report rustc 1.81.0-nightly (6868c831a 2024-06-30)). Pinned exactly:
+## other releases bundle a different toolchain and would need a rustup override.
+RUN cargo install --locked kani-verifier --version =0.53.0
+RUN cargo-kani setup
 
 # install cmake and point path to it
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-x86_64.tar.gz
