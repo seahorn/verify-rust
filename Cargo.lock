@@ -262,7 +262,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "custom-vec-raw_vec-aop-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "custom-vec-raw_vec-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
+]
+
+[[package]]
+name = "custom-vec-zst-alignment-issue-aop-lib"
 version = "0.1.0"
 dependencies = [
  "cfg-if 0.1.10",
@@ -1027,6 +1047,16 @@ checksum = "5ad948c1cb799b1a70f836077721a92a35ac177d4daddf4c20a633786d4cf618"
 dependencies = [
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "vec-filter-aop-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "libc",
+ "sea",
+ "verifier",
 ]
 
 [[package]]
