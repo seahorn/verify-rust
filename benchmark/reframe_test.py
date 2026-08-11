@@ -5,6 +5,22 @@ from pathlib import Path
 import json
 import re
 import os
+import subprocess
+import functools
+
+@functools.lru_cache(maxsize=None)
+def _ctest_names(build_dir):
+    """Test names ctest actually knows about, so a harness with no seahorn
+    counterpart can be skipped rather than counted as a failure. Cached: the
+    build directory is a fixture, shared by every test case in the run."""
+    try:
+        out = subprocess.run(['ctest', '-N', '--test-dir', build_dir],
+                             capture_output=True, text=True,
+                             timeout=300).stdout
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    return frozenset(re.findall(r'^\s*Test\s+#\d+:\s+(\S+)\s*$', out, re.M))
+
 
 def load_tests():
     bmc_tests = os.getenv('BMC_TESTS')
@@ -91,16 +107,37 @@ class BmcProofTest(rfm.RunOnlyRegressionTest):
                 '--no-assertion-reach-checks', # for speed
                 f'--manifest-path {self.kani_build_artefacts.stagedir}/src/rust-jobs/{directory}/Cargo.toml']
         elif self.tool == 'seahorn':
-            ctestname = f"{directory}_{harness}" if harness != 'entrypt' else directory
-            ctestname += f"_{'sat' if harness.startswith('testfail') else 'unsat'}_test"
+            build_dir = f'{self.seahorn_build_artefacts.stagedir}/rfm-build'
+            base = directory if harness == 'entrypt' else f'{directory}_{harness}'
+            # Only the sea_discover_tests jobs get a ctest per harness; the rest
+            # register a single entrypt test, so most harnesses have no seahorn
+            # counterpart. Look the name up instead of deriving it: running
+            # `ctest -R` on a name that matches nothing exits non-zero and is
+            # indistinguishable from a verification failure.
+            #
+            # Don't infer the suffix from a testfail_ prefix either -- jobs built
+            # error-on-panic register their base test with sea_add_sat_test, so
+            # check both spellings and take whichever exists.
+            known = _ctest_names(build_dir)
+            matches = [n for n in (f'{base}_unsat_test', f'{base}_sat_test')
+                       if n in known]
+            self.skip_if(
+                not matches,
+                f'no seahorn ctest for harness {harness!r} in {directory!r} '
+                f'(job has no per-harness test)'
+            )
+            ctestname = matches[0]
             # use latest ctest 3.x so that timeout is working
             # see https://gitlab.kitware.com/cmake/cmake/-/merge_requests/8851
             self.executable = 'ctest'
             self.executable_opts = [
                 '--verbose', # verbose needed to get timing of solver
-                '--timeout 86400', # 24 hours, this will be ignored 
+                '--timeout 86400', # 24 hours, this will be ignored
                                    # since we expect reframe timeout to be smaller than this.
-                f'--test-dir {self.seahorn_build_artefacts.stagedir}/rfm-build', f'-R {ctestname}']
+                f'--test-dir {build_dir}',
+                # anchored: bare -R is a regex, so `borsh` would also select
+                # borsh-enum, borsh-option, ...
+                f"-R '^{ctestname}$'"]
 
     @sanity_function
     def validate_exit(self):
