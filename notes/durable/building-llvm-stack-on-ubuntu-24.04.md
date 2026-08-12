@@ -1,5 +1,8 @@
 # Building the LLVM 14 stack on Ubuntu 24.04 (noble)
 
+*(Scope note: written for dev14, but §1 recurs verbatim on clang-18 — see §1b.
+The rest is dev14-specific.)*
+
 [FACT] Every build failure documented here is a version-skew problem between a
 pinned-old component (LLVM 14) and a moving-newer distro, not a SeaHorn bug. The
 fixes are stable environment reality, re-verified building on this host.
@@ -83,6 +86,56 @@ Then pass it to every clang-14 build (both this project and SeaHorn itself):
 The shim is just symlinks — it costs nothing and touches nothing outside your home
 directory. That is the point: it is a *view* of the system toolchain, not a change
 to it.
+
+---
+
+## 1b. The same failure on clang-18, with a different correct fix
+
+[OBS 2026-08-12] The identical error appears on **clang-18**, which matters now
+that the tree builds on dev18:
+
+```
+$ echo 'int main(){}' > t.cxx && clang++-18 t.cxx -o t.out
+/usr/bin/ld: cannot find -lstdc++
+```
+
+Same mechanism — `Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14`,
+which has no `libstdc++.so`. Confirm with:
+
+```bash
+clang++-18 -v -x c++ /dev/null -fsyntax-only 2>&1 | grep -i "Selected GCC"
+```
+
+### The fix, if you still need clang-14 on the same host
+
+`sudo apt install libstdc++-14-dev` fixes clang-18 on its own — clang 18 parses
+libstdc++ 14's headers, which is exactly what §1 says clang-14 cannot do. [HYP]
+But it would then break **clang-14**, which would start finding a GCC 14
+libstdc++ it cannot compile against. Untested; the reasoning follows from §1, not
+from an experiment.
+
+[OBS 2026-08-12] **On this workstation that tradeoff is moot** — the user does
+not need `build-14` (stated directly). So the supported fix here is the package,
+and the wrappers below are only the no-sudo workaround. Keep this section for
+hosts that do build dev14, and for CI images that carry both.
+
+Clang >= 16 supports `--gcc-install-dir=` directly (the option §1 notes is
+missing on clang-14), so no symlink shim is needed — name the directory:
+
+```bash
+mkdir -p bin
+for c in clang-18 clang++-18; do
+  printf '#!/bin/sh\nexec /usr/bin/%s --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/13 "$@"\n' "$c" > bin/$c
+  chmod +x bin/$c
+done
+export PATH="$PWD/bin:$PATH"
+```
+
+Wrappers rather than `-DCMAKE_*_FLAGS` because tooling that only takes a compiler
+*name* (ReFrame's `--cxx-compiler`, `run_benchmark.py`) has nowhere to put a flag.
+Verified 2026-08-12: with these on `PATH`, the benchmark's CMake fixture
+configures and builds all 63 jobs.
+→ ../journal/2026-08/2026-08-12-first-local-benchmark-run-on-dev18.md
 
 ---
 

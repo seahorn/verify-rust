@@ -34,25 +34,29 @@ The committed pin is 0.43.0 in two places, carrying `nightly-2023-12-14`:
   that comment predates the dev18 port).
 - `benchmark/reframe_test.py` — `kani_build_tests.KANI_VERSION = '0.43.0'`.
 
-[OBS 2026-08-07] Both files carry **uncommitted working-tree edits** bumping to
-`=0.53.0`, adding a `cargo-kani setup` step to the Dockerfile, and deleting the
-`rm -f rust-toolchain.toml` + `rustup override set 1.81.0` workaround from
-`reframe_test.py::kani_build_tests.prepare_build` (that workaround existed to
-stop the repo's toolchain pin colliding with Kani's; with 0.53.0 matching
-exactly it should be redundant).
+[SUPERSEDED 2026-08-12 — the edits described here are committed and verified]
+~~[OBS 2026-08-07] Both files carry **uncommitted working-tree edits** bumping to
+`=0.53.0` ... [OPEN] None of that is verified.~~
 
-[OPEN] **None of that is verified.** Kani is not installed here, CI has never run
-the benchmark step on dev18, and the edits' claim that 0.53.0 and
-`nightly-2024-07-01` both report `rustc 1.81.0-nightly (6868c831a 2024-06-30)`
-has not been checked in this workspace. Treat the removal of the workaround as
-[HYP] until a benchmark run passes.
+[OBS 2026-08-12] The bump is committed (`242e1db`) in both places, and the
+`rm -f rust-toolchain.toml` + `rustup override set 1.81.0` workaround is gone
+from `reframe_test.py::kani_build_tests.prepare_build`. **The removal is
+verified, not hypothesised**: a full 304-case benchmark run codegened and
+verified 151 harnesses with `rust-toolchain.toml` in place and no rustup
+override. → ../journal/2026-08/2026-08-12-first-local-benchmark-run-on-dev18.md
+
+[FACT] `--locked` is required on `cargo install kani-verifier`, not cosmetic.
+Without it cargo re-resolves to `home 0.5.12`, which needs `edition2024`
+(cargo >= 1.85) and fails to parse under this 1.81 toolchain. The comment at
+`reframe_test.py:48-52` records this.
 
 ## Caveat
 
-[FACT] Kani is not installed in this workspace, and neither is CBMC or ReFrame
-(`which cargo-kani cbmc reframe` → all empty as of 2026-08-07). Running anything
-Kani-side requires `cargo install kani-verifier --version 0.53.0` followed by
-`cargo-kani setup`, which downloads a large bundle including CBMC.
+[SUPERSEDED 2026-08-12] ~~Kani is not installed in this workspace, and neither is
+CBMC or ReFrame.~~ Kani 0.53.0 and its CBMC bundle are installed
+(`~/.kani/kani-0.53.0`, `cargo-kani --version` → 0.53.0). ReFrame is still not on
+the host and must go in a venv — PEP 668 blocks `pip install --user` on 24.04.
+→ running-the-benchmark-locally.md
 
 ## See also
 

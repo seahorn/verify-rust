@@ -2,6 +2,43 @@
 
 Chronological index of significant sessions and what they produced. Newest first.
 
+## 2026-08-12 — First full benchmark run on dev18 (both tools, 304/304)
+
+**Session:** `llvm18-port` (session `10a63551`, continued).
+**Theme:** Run the ReFrame benchmark end to end on dev18 — it had never
+completed on this toolchain, in CI or locally.
+
+**Key outputs:**
+- 304/304 cases passed (151 pairs x 2 tools + 2 fixtures), 80 min, serial. So
+  `all_benchmarks.txt` (`cadd21b`) is confirmed accurate.
+- journal/2026-08/2026-08-12-first-local-benchmark-run-on-dev18.md — results and
+  the finding that seabmc's 8.9x median lead is per-invocation overhead, not
+  solving power (total solver time 325.9s vs 325.5s, a 0.1% difference).
+- durable/running-the-benchmark-locally.md — the four things the host does not
+  provide, and the reproducible recipe.
+- durable/building-llvm-stack-on-ubuntu-24.04.md §1b — the `-lstdc++` failure
+  recurs on clang-18; `--gcc-install-dir` is available there (unlike clang-14),
+  but installing `libstdc++-14-dev` would likely break the coexisting dev14 build.
+- `benchmark/benchmark_postprocess.csv` regenerated from this run.
+
+**Critical corrections:**
+- I recommended `sudo apt install libstdc++-14-dev` to the user as the permanent
+  fix before reading durable/building-llvm-stack-on-ubuntu-24.04.md §1, which
+  documents that exact package as a trap for clang-14. The advice turned out to
+  be right — no `build-14` is needed on this box — but I did not know that when I
+  gave it, and the notes I had already read said otherwise. Right answer, no
+  grounds for it.
+- Two launches were wasted diagnosing "seahorn failures" that were environment
+  faults (unlinkable clang++-18, unset `LD_LIBRARY_PATH`). Both present as
+  ordinary case failures. Sanity-check one job before a long run.
+
+**Status:** complete. CSVs regenerated; committed PDFs deliberately untouched
+(they belong to the AoP/EoP study, a different dataset).
+
+**Next-session pickup candidates:**
+- The `run benchmarks` CI step still has never executed on dev18.
+- Merge `52f0369`; the 7 remaining vacuity-audit TIMEOUTs.
+
 ## 2026-08-08 — EoP made the default; panic-override linkage bug fixed
 
 **Session:** `llvm18-port` (session `10a63551`, continued).

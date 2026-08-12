@@ -4,8 +4,8 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
 
 ## Upgrade kani and cross-check against SeaHorn
 
-**Status:** part (2) DONE 2026-08-07 (sweep run, see journal); part (1) bump
-   still UNCOMMITTED
+**Status:** part (2) DONE 2026-08-07 (sweep run, see journal); part (1) DONE and
+   committed 2026-08-12 (`242e1db`)
 **Context:** Two parts. (1) The committed kani pin is 0.43.0 in
    `docker/verify-rust.Dockerfile` (`--version ^0.43`) and
    `benchmark/reframe_test.py` (`KANI_VERSION`), carrying `nightly-2023-12-14`
@@ -38,10 +38,20 @@ Backlog of started-or-considered work not currently pursued. Five-field format.
    uncommitted reframe_test.py edit. The rust-toolchain workaround removal is
    now confirmed safe. Remaining: 15 harnesses timed out and 10 hit the memory
    cap; re-run those with a larger budget if the numbers matter.
-**Effort estimate:** ~1h for the version bump; ~2h to clear the 25
-   resource-limited harnesses.
+**Update 2026-08-12:** part (1) is DONE and committed (`242e1db`, kani 0.53.0 in
+   both files with `--locked`; `fd949fc` fixed the ctest-name resolution the
+   wider run exposed). The whole benchmark then ran end to end on dev18 —
+   304/304, the first complete both-tools run on this toolchain — which also
+   settles the `[HYP]`: kani 0.53.0 codegens with `rust-toolchain.toml` in place
+   and no `rustup override`, so dropping that workaround is confirmed safe.
+   → journal/2026-08/2026-08-12-first-local-benchmark-run-on-dev18.md
+   Still open: the 25 resource-limited harnesses at a larger budget, and the CI
+   `run benchmarks` step, which has *still* never executed on dev18.
+**Effort estimate:** ~2h to clear the 25 resource-limited harnesses.
 **References:** durable/kani-version-to-rust-toolchain-map.md,
-   journal/2026-08/2026-08-07-ci-ported-to-dev18.md
+   durable/running-the-benchmark-locally.md,
+   journal/2026-08/2026-08-07-ci-ported-to-dev18.md,
+   journal/2026-08/2026-08-12-first-local-benchmark-run-on-dev18.md
 
 ## Why does instrumenting dead code (try_grow) kill a live assertion?
 
