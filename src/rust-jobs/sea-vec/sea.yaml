@@ -1,2 +1,2 @@
 verify_options:
-  #bound: 3
+  bound: 9
