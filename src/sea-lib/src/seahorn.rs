@@ -57,8 +57,139 @@ generate_impl!(bool);
 generate_impl!(usize);
 generate_impl!(isize);
 
+// The impls below are built from the primitive nondet functions above, so they
+// need no extra C stubs. Each one only produces values that are valid for the
+// type (e.g. no surrogate chars), because an invalid value would be UB that
+// LLVM can use to delete code before SeaHorn sees it.
+
+impl Arbitrary for () {
+    #[inline(always)]
+    fn any() -> Self {}
+}
+
+impl Arbitrary for u128 {
+    #[inline(always)]
+    fn any() -> Self {
+        ((u64::any() as u128) << 64) | (u64::any() as u128)
+    }
+}
+
+impl Arbitrary for i128 {
+    #[inline(always)]
+    fn any() -> Self {
+        u128::any() as i128
+    }
+}
+
+impl Arbitrary for char {
+    #[inline(always)]
+    fn any() -> Self {
+        let v = u32::any();
+        // valid chars are Unicode scalar values: [0, 0xD7FF] and [0xE000, 0x10FFFF]
+        assume(v < 0xD800 || (v > 0xDFFF && v <= 0x10FFFF));
+        unsafe { char::from_u32_unchecked(v) }
+    }
+}
+
+// SeaHorn does not model floating point: float values are havoc'd and float
+// comparisons are not supported by the BMC engine. These impls let float
+// fields appear in derived types, but don't assert on float values.
+impl Arbitrary for f32 {
+    #[inline(always)]
+    fn any() -> Self {
+        f32::from_bits(u32::any())
+    }
+}
+
+impl Arbitrary for f64 {
+    #[inline(always)]
+    fn any() -> Self {
+        f64::from_bits(u64::any())
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for Option<T> {
+    #[inline(always)]
+    fn any() -> Self {
+        if bool::any() { Some(T::any()) } else { None }
+    }
+}
+
+impl<T: Arbitrary, E: Arbitrary> Arbitrary for Result<T, E> {
+    #[inline(always)]
+    fn any() -> Self {
+        if bool::any() { Ok(T::any()) } else { Err(E::any()) }
+    }
+}
+
+impl<T: Arbitrary, const N: usize> Arbitrary for [T; N] {
+    #[inline(always)]
+    fn any() -> Self {
+        core::array::from_fn(|_| T::any())
+    }
+}
+
+macro_rules! tuple_impl {
+    ($($name:ident)+) => {
+        impl<$($name: Arbitrary),+> Arbitrary for ($($name,)+) {
+            #[inline(always)]
+            fn any() -> Self {
+                ($($name::any(),)+)
+            }
+        }
+    };
+}
+
+tuple_impl!(A);
+tuple_impl!(A B);
+tuple_impl!(A B C);
+tuple_impl!(A B C D);
+tuple_impl!(A B C D E);
+tuple_impl!(A B C D E F);
 
 #[inline(always)]
 pub fn any<T: Arbitrary>() -> T {
     T::any()
 }
+
+/// Fill `buf` with nondet values and return a prefix of nondet length
+/// `0..=N`. Slices are unsized, so the caller supplies the backing storage;
+/// `N` is the bound on the slice length.
+#[inline(always)]
+pub fn any_slice<T: Arbitrary, const N: usize>(buf: &mut [T; N]) -> &mut [T] {
+    *buf = <[T; N]>::any();
+    let len = usize::any();
+    assume(len <= N);
+    &mut buf[..len]
+}
+
+/// A nondet `&str` of at most `N` bytes, backed by `buf`. Every valid UTF-8
+/// string up to that length is possible (not just ASCII).
+#[inline(always)]
+pub fn any_str<const N: usize>(buf: &mut [u8; N]) -> &str {
+    let bytes = any_slice(buf);
+    assume(core::str::from_utf8(bytes).is_ok());
+    unsafe { core::str::from_utf8_unchecked(bytes) }
+}
+
+#[cfg(feature = "std")]
+/// A nondet `Vec<T>` of length `0..=N`.
+pub fn any_vec<T: Arbitrary, const N: usize>() -> Vec<T> {
+    let len = usize::any();
+    assume(len <= N);
+    let mut v = Vec::with_capacity(N);
+    for _ in 0..N {
+        v.push(T::any());
+    }
+    v.truncate(len);
+    v
+}
+
+#[cfg(feature = "std")]
+/// A nondet `String` of at most `N` bytes.
+pub fn any_string<const N: usize>() -> String {
+    let mut buf = [0u8; N];
+    String::from(any_str(&mut buf))
+}
+
+pub use sea_nd_func::Arbitrary;
