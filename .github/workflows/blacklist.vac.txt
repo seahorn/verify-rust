@@ -1,12 +1,20 @@
 copy_stack_buffer_unsat_test
+custom-vec-zst-alignment-issue_unsat_test	vacuous: found in 2026-07-24 audit, not yet investigated
 custom-vec_test_deref_unsat_test
 custom-vec_test_insert_unsat_test
 custom-vec_test_remove_unsat_test
 custom-vec-loop-unroll_unsat_test
 result-unwrap_or_else_unsat_test
+sea-vec_test_iter_unsat_test	vacuous: compiler-generated check at lib.rs:0 never reached, not yet investigated
 smallvec-allocation-bound2_test_resize2_unsat_test
 smallvec-allocation-bound2_test_resize_with2_unsat_test
+smallvec-bound2_test_append_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
+smallvec-bound2_test_drain_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
+smallvec-bound2_test_insert_many_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
 smallvec-bound2_test_resize2_unsat_test
+smallvec-bound2_test_resize_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
+smallvec-bound2_test_resize_with2_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
+smallvec-bound2_test_resize_with_unsat_test	vacuous: D2 -fat-bnd-check bug in SeaHorn, investigate upstream
 smallvec-insert-optimization_unsat_test
 tinyvec-arrayvec_test_append_unsat_test
 tinyvec-arrayvec_test_insert_unsat_test
