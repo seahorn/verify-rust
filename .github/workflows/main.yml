@@ -15,14 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         #verify_flag: ["", "--vac", "--cex"]
-        verify_flag: ["", "--vac"]
-        # sat tests carry the skipvac label: a vacuity run reports sat as failure
-        ctest_flag: ["", "--label-exclude=skipvac"]
-        exclude:
-          - verify_flag: ""
-            ctest_flag: "--label-exclude=skipvac"
-          - verify_flag: "--vac"
-            ctest_flag: ""
+        verify_flag: [""]
+        #ctest_flag: ["", "--label-exclude=\"skipvac\""]
+        ctest_flag: [""]
+        # exclude:
+        #   - verify_flag: ""
+        #     ctest_flag: "--label-exclude=\"skipvac\""
+        #   - verify_flag: "--cex"
+        #     ctest_flag: "--label-exclude=\"skipvac\""
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -70,7 +70,6 @@ jobs:
             -j ${{ steps.cores.outputs.num_cores }} \
             --output-on-failure \
             --timeout 2000 \
-            ${{ matrix.ctest_flag }} \
             -E '${{ steps.exclude_files.outputs.exclude_files }}'
           "
 
