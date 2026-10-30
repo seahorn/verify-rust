@@ -152,6 +152,33 @@ pub fn any<T: Arbitrary>() -> T {
     T::any()
 }
 
+/// A nondet value for which `f` holds: `any_with(|x: &u32| *x < 10)`.
+/// Same as `any()` followed by `assume(f(&v))`.
+#[inline(always)]
+pub fn any_with<T: Arbitrary, F: FnOnce(&T) -> bool>(f: F) -> T {
+    let v = T::any();
+    assume(f(&v));
+    v
+}
+
+/// `None`, or `Some(f())`, chosen nondeterministically.
+#[inline(always)]
+pub fn nondet_option<T, F: FnOnce() -> T>(f: F) -> Option<T> {
+    if bool::any() { Some(f()) } else { None }
+}
+
+// Certora CVLR's names for the same operations, so harnesses written against
+// `cvlr::nondet` port without edits.
+#[inline(always)]
+pub fn nondet<T: Arbitrary>() -> T {
+    T::any()
+}
+
+#[inline(always)]
+pub fn nondet_with<T: Arbitrary, F: FnOnce(&T) -> bool>(f: F) -> T {
+    any_with(f)
+}
+
 /// Fill `buf` with nondet values and return a prefix of nondet length
 /// `0..=N`. Slices are unsized, so the caller supplies the backing storage;
 /// `N` is the bound on the slice length.
@@ -173,7 +200,11 @@ pub fn any_str<const N: usize>(buf: &mut [u8; N]) -> &str {
 }
 
 #[cfg(feature = "std")]
-/// A nondet `Vec<T>` of length `0..=N`.
+/// A nondet `Vec<T>` of length `0..=N`. Capacity is always `N`.
+///
+/// Capacity is deliberately not nondet: with a capacity drawn independently of
+/// the length, SeaHorn loses the stored elements (they read back as arbitrary
+/// values), so states such as len 1 / capacity 1 are not generated.
 pub fn any_vec<T: Arbitrary, const N: usize>() -> Vec<T> {
     let len = usize::any();
     assume(len <= N);
@@ -186,7 +217,12 @@ pub fn any_vec<T: Arbitrary, const N: usize>() -> Vec<T> {
 }
 
 #[cfg(feature = "std")]
-/// A nondet `String` of at most `N` bytes.
+/// A nondet `String` of at most `N` bytes. Capacity always equals length.
+///
+/// Spare capacity is deliberately not modelled: with a nondet capacity,
+/// SeaHorn loses the copied bytes (decoded chars no longer add up to `len`),
+/// even at `horn-bv2-word-size: 1`. Jobs that reason about contents need word
+/// size 1: at the default (8) the symbolic-length copy loses the bytes too.
 pub fn any_string<const N: usize>() -> String {
     let mut buf = [0u8; N];
     String::from(any_str(&mut buf))

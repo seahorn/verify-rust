@@ -2,7 +2,7 @@
 
 // Nondet helpers for types that need caller-supplied storage or a derive.
 // `any!()` covers everything that implements `Arbitrary`.
-pub use sea::{any_slice, any_str, Arbitrary};
+pub use sea::{any_slice, any_str, any_with, nondet, nondet_option, nondet_with, Arbitrary};
 #[cfg(feature = "std")]
 pub use sea::{any_string, any_vec};
 
