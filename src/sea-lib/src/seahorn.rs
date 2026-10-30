@@ -209,10 +209,13 @@ pub fn any_vec<T: Arbitrary, const N: usize>() -> Vec<T> {
     let len = usize::any();
     assume(len <= N);
     let mut v = Vec::with_capacity(N);
+    // Push only up to `len` rather than pushing N and truncating: with
+    // truncate, SeaHorn loses the kept elements (test_vec_contents goes sat).
     for _ in 0..N {
-        v.push(T::any());
+        if v.len() < len {
+            v.push(T::any());
+        }
     }
-    v.truncate(len);
     v
 }
 
