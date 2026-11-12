@@ -18,6 +18,8 @@
         "custom-vec-zst-alignment-issue",
         "empty-print",
         "enum-as-param",
+        "nondet-types",
+        "nondet-types-bug",
         "option",
         "option-and-then",
         "option-is-some-and",
