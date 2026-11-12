@@ -21,6 +21,7 @@
         "nondet-reach",
         "nondet-types",
         "nondet-types-bug",
+        "nondet-valid",
         "option",
         "option-and-then",
         "option-is-some-and",
