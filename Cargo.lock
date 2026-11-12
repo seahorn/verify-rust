@@ -418,6 +418,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nondet-valid-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
