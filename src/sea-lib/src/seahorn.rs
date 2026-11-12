@@ -187,4 +187,36 @@ pub fn any_str<const N: usize>(buf: &mut [u8; N]) -> &str {
     unsafe { core::str::from_utf8_unchecked(bytes) }
 }
 
+#[cfg(feature = "std")]
+/// A nondet `Vec<T>` of length `0..=N`. Capacity is always `N`.
+///
+/// Capacity is deliberately not nondet: with a capacity drawn independently of
+/// the length, SeaHorn loses the stored elements (they read back as arbitrary
+/// values), so states such as len 1 / capacity 1 are not generated.
+pub fn any_vec<T: Arbitrary, const N: usize>() -> Vec<T> {
+    let len = usize::any();
+    assume(len <= N);
+    let mut v = Vec::with_capacity(N);
+    // Push only up to `len` rather than pushing N and truncating: with
+    // truncate, SeaHorn loses the kept elements (test_vec_contents goes sat).
+    for _ in 0..N {
+        if v.len() < len {
+            v.push(T::any());
+        }
+    }
+    v
+}
+
+#[cfg(feature = "std")]
+/// A nondet `String` of at most `N` bytes. Capacity always equals length.
+///
+/// Spare capacity is deliberately not modelled: with a nondet capacity,
+/// SeaHorn loses the copied bytes (decoded chars no longer add up to `len`),
+/// even at `horn-bv2-word-size: 1`. Jobs that reason about contents need word
+/// size 1: at the default (8) the symbolic-length copy loses the bytes too.
+pub fn any_string<const N: usize>() -> String {
+    let mut buf = [0u8; N];
+    String::from(any_str(&mut buf))
+}
+
 pub use sea_nd_func::Arbitrary;

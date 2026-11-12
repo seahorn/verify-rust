@@ -19,6 +19,7 @@
         "empty-print",
         "enum-as-param",
         "nondet-reach",
+        "nondet-std",
         "nondet-types",
         "nondet-types-bug",
         "nondet-valid",
