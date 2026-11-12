@@ -18,6 +18,7 @@
         "custom-vec-zst-alignment-issue",
         "empty-print",
         "enum-as-param",
+        "nondet-reach",
         "nondet-types",
         "nondet-types-bug",
         "option",
