@@ -22,6 +22,19 @@ pub fn nondet_option<T, F: FnOnce() -> T>(f: F) -> Option<T> {
     if bool::any() { Some(f()) } else { None }
 }
 
+// Certora CVLR's names for the same operations, so harnesses written against
+// `cvlr::nondet` port without edits. Re-implementations on our own Arbitrary
+// and assume; there is no CVLR dependency.
+#[inline(always)]
+pub fn nondet<T: Arbitrary>() -> T {
+    T::any()
+}
+
+#[inline(always)]
+pub fn nondet_with<T: Arbitrary, F: FnOnce(&T) -> bool>(f: F) -> T {
+    any_with(f)
+}
+
 #[macro_export]
 macro_rules! sea_printf {
     ($message:expr $(, $args:expr)*) => {{

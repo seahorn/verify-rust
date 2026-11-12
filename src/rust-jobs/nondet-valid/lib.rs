@@ -8,7 +8,7 @@
 // sat. That shows the test's assertion is live and the boundary is reached.
 // Panics are verifier errors here (CUSTOM_PANIC_NO_STD).
 
-use verifier::{any_slice, any_str, any_with, nondet_option, Arbitrary};
+use verifier::{any_slice, any_str, any_with, nondet, nondet_option, nondet_with, Arbitrary};
 
 #[derive(Arbitrary)]
 #[repr(u8)]
@@ -192,6 +192,26 @@ pub extern "C" fn test_any_with() {
 pub extern "C" fn testfail_any_with_mut() {
     let x: u32 = any_with(|x: &u32| *x > 0 && *x <= 100);
     verifier::vassert!(opaque(x) < 100);
+}
+
+// nondet_with (CVLR name for any_with): same contract as any_with
+#[no_mangle]
+pub extern "C" fn test_nondet_with() {
+    let y: u32 = nondet_with(|y: &u32| *y >= 7);
+    verifier::vassert!(opaque(y) >= 7);
+}
+
+#[no_mangle]
+pub extern "C" fn testfail_nondet_with_mut() {
+    let y: u32 = nondet_with(|y: &u32| *y >= 7);
+    verifier::vassert!(opaque(y) > 7);
+}
+
+// nondet() (CVLR name for any!()): both ends of the range are reachable
+#[no_mangle]
+pub extern "C" fn testfail_nondet_max() {
+    let x: u8 = nondet();
+    verifier::vassert!(opaque(x) != u8::MAX);
 }
 
 // nondet_option: both None and Some are reachable, and Some carries f()'s value
