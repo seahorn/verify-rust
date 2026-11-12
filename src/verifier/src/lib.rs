@@ -79,3 +79,6 @@ macro_rules! printf {
         }
     }};
 }
+
+// any!() followed by assume!(pred), and a nondet Option.
+pub use sea::{any_with, nondet_option};
