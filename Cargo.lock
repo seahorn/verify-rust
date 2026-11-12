@@ -391,6 +391,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nondet-reach-lib"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 0.1.10",
+ "sea",
+ "verifier",
+]
+
+[[package]]
 name = "nondet-types-bug-lib"
 version = "0.1.0"
 dependencies = [
