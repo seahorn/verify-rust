@@ -7,6 +7,21 @@ pub fn verifier_error() { unsafe { __VERIFIER_error(); } }
 #[no_mangle]
 pub fn assume(v: bool) { unsafe { __VERIFIER_assume(v.into()); } }
 
+/// A nondet value for which `f` holds: `any_with(|x: &u32| *x < 10)`.
+/// Same as `any()` followed by `assume(f(&v))`.
+#[inline(always)]
+pub fn any_with<T: Arbitrary, F: FnOnce(&T) -> bool>(f: F) -> T {
+    let v = T::any();
+    assume(f(&v));
+    v
+}
+
+/// `None`, or `Some(f())`, chosen nondeterministically.
+#[inline(always)]
+pub fn nondet_option<T, F: FnOnce() -> T>(f: F) -> Option<T> {
+    if bool::any() { Some(f()) } else { None }
+}
+
 #[macro_export]
 macro_rules! sea_printf {
     ($message:expr $(, $args:expr)*) => {{
