@@ -712,13 +712,18 @@ impl<T> DerefMut for CustomVec<T> {
 
 impl<T> Drop for CustomVec<T> {
     fn drop(&mut self) {
-        unsafe {
-            let slice: &mut [T] = core::slice::from_raw_parts_mut(self.ptr(), self.len);
+        // alloc() with a zero-size layout is UB (GlobalAlloc contract; sea-lib's
+        // allocator reports it as an error), so an empty vector has nothing to do.
+        // Same guard as custom-vec-raw_vec.
+        if self.len != 0 {
+            unsafe {
+                let slice: &mut [T] = core::slice::from_raw_parts_mut(self.ptr(), self.len);
 
-            let copy_ptr: *mut T = alloc(Layout::array::<T>(self.len).unwrap()) as *mut T;
-            copy_ptr.copy_from_nonoverlapping(slice.as_ptr(), self.len);
-            let copy_slice: &mut [T] = core::slice::from_raw_parts_mut(copy_ptr, self.len);
-            _ = Box::from_raw(copy_slice as *mut [T]);
+                let copy_ptr: *mut T = alloc(Layout::array::<T>(self.len).unwrap()) as *mut T;
+                copy_ptr.copy_from_nonoverlapping(slice.as_ptr(), self.len);
+                let copy_slice: &mut [T] = core::slice::from_raw_parts_mut(copy_ptr, self.len);
+                _ = Box::from_raw(copy_slice as *mut [T]);
+            }
         }
         // deallocation is handled by RawVec
     }
