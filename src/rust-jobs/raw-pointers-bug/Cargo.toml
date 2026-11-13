@@ -1,0 +1,30 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "raw-pointers-bug-lib"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["staticlib"]
+path = "lib.rs"
+
+[dependencies]
+libc = "0.2"
+cfg-if = "0.1.10"
+
+[dependencies.verifier]
+path = "../../verifier/src"
+default-features = true
+features = []
+
+[dependencies.sea]
+path = "../../sea-lib"
+default-features = false
+features = []
+
+[features]
+default = []  # Specify other default features here, if any
+panic_handler = []

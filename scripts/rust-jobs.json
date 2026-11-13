@@ -27,6 +27,8 @@
         "panic-test",
         "paper-example",
         "pointer",
+        "raw-pointers",
+        "raw-pointers-bug",
         "result-and_then",
         "result-as_deref",
         "result-cloned",
