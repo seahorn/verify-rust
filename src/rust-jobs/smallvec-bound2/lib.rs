@@ -250,7 +250,7 @@ fn test_resize2() {
     sea::sea_printf!("len: %d, resize_point: %d, cap:%d inline_sz:%d", len, resize_point, CAP, v.inline_size());
     v.resize(resize_point, verifier::any!());
 
-    verifier::vassert!(v.len() != resize_point);
+    verifier::vassert!(v.len() == resize_point);
 }
 
 #[no_mangle]
