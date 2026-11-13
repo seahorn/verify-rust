@@ -1,2 +1,4 @@
 verify_options:
-  #bound: 3
+  # several tests loop up to 10 times (pushes, drops); a smaller bound cuts
+  # those loops and the assertions after them are never reached
+  bound: 10
