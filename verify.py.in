@@ -14,7 +14,7 @@ import sys
 SEAHORN_ROOT = "@SEAHORN_ROOT@"
 ASSERT_ERROR_PREFIX = r'^Error: assertion failed'
 # the plan is to have two sets, vac error and info and put filepath:linenumbers) into both
-VACUITY_CHECK_RE = r'^(?P<stream>Info|Error).*(?P<what>vacuity|assertion).*(?P<result>passed|failed).*sat\) (?P<debuginfo>.*)$'
+VACUITY_CHECK_RE = r'^(?P<stream>Info|Error).*(?P<what>vacuity|assertion).*(?P<result>passed|failed).*(?:sat|unknown)\) (?P<debuginfo>.*)$'
 
 # inspired from https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
 class bcolors:
