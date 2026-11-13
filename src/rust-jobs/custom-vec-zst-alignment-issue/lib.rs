@@ -14,53 +14,77 @@ use core::marker::PhantomData;
 
 #[no_mangle]
 pub extern "C" fn entrypt() {
-    test_alignment_bug();
+    let v: u8 = verifier::any!();
+    match v {
+        0 => testfail_alignment_bug(),
+        1 => test_alignment_fixed(),
+        _ => (),
+    }
 }
 
+// A ZST whose dangling pointer must be 4-aligned.
+#[repr(align(4))]
+struct ZST {}
 
-#[no_mangle]
-#[cfg_attr(kani, kani::proof)]
-fn test_alignment_bug() {
-    #[repr(align(4))] // alignmnet size of 4
-    struct ZST { }
+const N: u32 = 10;
 
+// Push N ZSTs, then take N + 2 items alternately from the front and the back.
+// Every pointer the iterator hands out must be aligned for ZST, and exactly N
+// items must come out: the two extra calls (one per end) must return None.
+// Exhaustion is checked through the counter rather than `vassert!(x.is_none())`,
+// which LLVM lowers to `assume(start != end); assert(false)`. --vac reports that
+// form as unreachable even when it is proven.
+fn drain_both_ends<const ALIGNED: bool>() {
     let alignment_size: usize = mem::align_of::<ZST>();
 
-    let n: u32 = 10;
     let mut v: CustomVec<ZST> = CustomVec::new();
-    for _ in 0..n {
+    for _ in 0..N {
         v.push(ZST {});
     }
 
-    let mut iter: IntoIter<ZST> = v.into_iter();
-    let mut unaligned_start: bool = false;
-    let mut unaligned_end: bool = false;
+    let mut iter: IntoIter<ZST, ALIGNED> = v.into_raw_iter();
+    let mut yielded: u32 = 0;
 
-    for i in 0..n {
-        if i%2 == 0 {
-            match iter.next() {
-                Some((_value, ptr)) => {
-                    if (ptr as usize) % alignment_size != 0 {
-                        unaligned_start = true;
-                    }
-                },
-                None => {},
-            };
-        } else {
-            match iter.next_back() {
-                Some((_value, ptr)) => {
-                    if (ptr as usize) % alignment_size != 0 {
-                        unaligned_end = true;
-                    }
-                },
-                None => {},
-            };
+    for i in 0..N + 2 {
+        let item = if i % 2 == 0 { iter.next() } else { iter.next_back() };
+        match item {
+            Some((_value, ptr)) => {
+                verifier::vassert!((ptr as usize) % alignment_size == 0);
+                yielded += 1;
+            }
+            None => {}
         }
     }
 
-    verifier::vassert!(unaligned_start);
-    verifier::vassert!(unaligned_end);
-    // verifier::vassert!(false);
+    verifier::vassert!(yielded == N);
+}
+
+// The bug this job documents. For a ZST, RawValIter uses `start`/`end` as byte
+// counters starting at the dangling pointer (address 4 here) and reads through
+// them, so the second read is at address 13 (the first `next_back`), which is
+// misaligned. Reading through a misaligned pointer is UB even for a ZST.
+//
+// Expected sat: core's debug check in `ptr::read` ("ptr::read requires that the
+// pointer argument is aligned and non-null") panics, and the panic is a
+// verification error (CUSTOM_PANIC_NO_STD + verifier/panic_error). Without that
+// check, the alignment vassert in drain_both_ends fails on the same pointer.
+//
+// The original harness asserted that the pointers *were* misaligned and was an
+// unsat test. Under abort-on-panic, the `ptr::read` check cut every path before
+// those asserts, so that proof was vacuous.
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::should_panic)]
+fn testfail_alignment_bug() {
+    drain_both_ends::<false>();
+}
+
+// The same harness with the fix std uses: keep the byte counters for
+// bookkeeping, but read and hand out `NonNull::dangling()`, which is aligned.
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+fn test_alignment_fixed() {
+    drain_both_ends::<true>();
 }
 
 
@@ -103,12 +127,14 @@ impl<T> CustomVec<T> {
     }
 }
 
-struct RawValIter<T> {
+// ALIGNED = false is the original (buggy) ZST handling. ALIGNED = true reads
+// ZSTs through an aligned dangling pointer instead of the byte counter.
+struct RawValIter<T, const ALIGNED: bool = false> {
     start: *const T,
     end: *const T,
 }
 
-impl<T> RawValIter<T> {
+impl<T, const ALIGNED: bool> RawValIter<T, ALIGNED> {
     unsafe fn new(slice: &[T]) -> Self {
         RawValIter {
             start: slice.as_ptr(),
@@ -121,17 +147,27 @@ impl<T> RawValIter<T> {
             },
         }
     }
+
+    // The pointer to read the current element through. For a ZST, `counter` is
+    // a byte counter and need not be aligned.
+    fn elem_ptr(counter: *const T) -> *const T {
+        if ALIGNED && mem::size_of::<T>() == 0 {
+            NonNull::<T>::dangling().as_ptr()
+        } else {
+            counter
+        }
+    }
 }
 
-impl<T> Iterator for RawValIter<T> {
+impl<T, const ALIGNED: bool> Iterator for RawValIter<T, ALIGNED> {
     type Item = (T, *const T);
     fn next(&mut self) -> Option<(T, *const T)> {
         if self.start == self.end {
             None
         } else {
             unsafe {
-                let result = ptr::read(self.start);
-                let old_ptr = self.start;
+                let old_ptr = Self::elem_ptr(self.start);
+                let result = ptr::read(old_ptr);
                 self.start = if mem::size_of::<T>() == 0 {
                     self.start.wrapping_byte_add(1)
                 } else {
@@ -149,7 +185,7 @@ impl<T> Iterator for RawValIter<T> {
     }
 }
 
-impl<T> DoubleEndedIterator for RawValIter<T> {
+impl<T, const ALIGNED: bool> DoubleEndedIterator for RawValIter<T, ALIGNED> {
     fn next_back(&mut self) -> Option<(T, *const T)> {
         if self.start == self.end {
             None
@@ -158,33 +194,33 @@ impl<T> DoubleEndedIterator for RawValIter<T> {
             unsafe {
                 if mem::size_of::<T>() == 0 {
                     self.end = self.end.wrapping_byte_sub(1);
-                    // Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
                 } else {
                     self.end = self.end.offset(-1);
                 }
-                Some((ptr::read(self.end), self.end))
+                let elem = Self::elem_ptr(self.end);
+                Some((ptr::read(elem), elem))
             }
         } 
     }
 }
 
-pub struct IntoIter<T> {
+pub struct IntoIter<T, const ALIGNED: bool = false> {
     _buf: RawVec<T>, // we don't actually care about this. Just need it to live.
-    iter: RawValIter<T>,
+    iter: RawValIter<T, ALIGNED>,
     len: usize,
 }
 
-impl<T> Iterator for IntoIter<T> {
+impl<T, const ALIGNED: bool> Iterator for IntoIter<T, ALIGNED> {
     type Item = (T, *const T);
     fn next(&mut self) -> Option<(T, *const T)> { self.iter.next() }
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
-impl<T> DoubleEndedIterator for IntoIter<T> {
+impl<T, const ALIGNED: bool> DoubleEndedIterator for IntoIter<T, ALIGNED> {
     fn next_back(&mut self) -> Option<(T, *const T)> { self.iter.next_back() }
 }
 
-impl<T> Drop for IntoIter<T> {
+impl<T, const ALIGNED: bool> Drop for IntoIter<T, ALIGNED> {
     fn drop(&mut self) {
         // for _ in &mut *self {}
         unsafe {
@@ -205,6 +241,12 @@ impl<T> IntoIterator for CustomVec<T> {
     type Item = (T, *const T);
     type IntoIter = IntoIter<T>;
     fn into_iter(self) -> IntoIter<T> {
+        self.into_raw_iter()
+    }
+}
+
+impl<T> CustomVec<T> {
+    fn into_raw_iter<const ALIGNED: bool>(self) -> IntoIter<T, ALIGNED> {
         unsafe {
             let iter = RawValIter::new(&self);
             let buf = ptr::read(&self.buf);
