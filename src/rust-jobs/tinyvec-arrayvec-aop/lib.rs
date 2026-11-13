@@ -128,14 +128,11 @@ fn test_clear() {
 
     v.clear();
 
-    // `expected_*` are opaque to rustc: they are tied to the concrete values
-    // only through verifier::assume!, an extern "C" call the front end cannot
-    // see through. Comparing against literals lets LLVM 18 fold these to `true`
-    // before SeaHorn runs, leaving nothing to prove.
-    let expected_len: usize = verifier::any!();
-    let expected_cap: usize = verifier::any!();
-    verifier::assume!(expected_len == 0);
-    verifier::assume!(expected_cap == 8);
+    // `expected_*` go through `opaque` (a volatile read): comparing against
+    // literals lets LLVM 18 fold these to `true` before SeaHorn runs, leaving
+    // nothing to prove. No assumption is added.
+    let expected_len: usize = opaque(0);
+    let expected_cap: usize = opaque(8);
 
     verifier::vassert!(v.len() == expected_len);
     verifier::vassert!(v.capacity() == expected_cap);
@@ -263,10 +260,9 @@ fn test_extend_from_slice() {
 
     v1.extend_from_slice(v2.as_slice());
 
-    // `expected_len` is opaque to rustc (tied to len1+len2 only through an
-    // extern "C" assume), so the assertion survives to BMC.
-    let expected_len: usize = verifier::any!();
-    verifier::assume!(expected_len == len1 + len2);
+    // `expected_len` goes through `opaque` (a volatile read), so the assertion
+    // survives to BMC without adding an assumption.
+    let expected_len: usize = opaque(len1 + len2);
     verifier::vassert!(v1.len() == expected_len);
 }
 
@@ -296,11 +292,9 @@ fn test_from_array_empty() {
     const CAP : usize = 8;
     let v: ArrayVec<[u32; CAP]> = ArrayVec::from_array_empty([0; CAP]);
 
-    // `expected_len` is opaque to rustc (tied to 0 only through an extern "C"
-    // assume), so the assertion survives to BMC instead of folding to `true`.
-    // This replaces the old `x * 2 >= x` keep-alive, which LLVM 18 also folds.
-    let expected_len: usize = verifier::any!();
-    verifier::assume!(expected_len == 0);
+    // `expected_len` goes through `opaque` (a volatile read), so the assertion
+    // survives to BMC instead of folding to `true`, without adding an assumption.
+    let expected_len: usize = opaque(0);
     verifier::vassert!(v.len() == expected_len);
 }
 
@@ -339,11 +333,10 @@ fn test_from_array_len() {
     if len <= CAP {
         let v: ArrayVec<[u32; CAP]> = ArrayVec::from_array_len([0; CAP], len);
 
-        // `expected_len` is opaque to rustc (tied to `len` only through an
-        // extern "C" assume), so the assertion survives to BMC instead of
-        // folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
-        let expected_len: usize = verifier::any!();
-        verifier::assume!(expected_len == len);
+        // `expected_len` goes through `opaque` (a volatile read), so the
+        // assertion survives to BMC instead of folding to `true`, without
+        // adding an assumption.
+        let expected_len: usize = opaque(len);
         verifier::vassert!(v.len() == expected_len);
     }
 }
@@ -445,13 +438,10 @@ fn test_new() {
     const CAP: usize = 4;
     let v: ArrayVec<[u32; CAP]> = ArrayVec::new();
 
-    // `expected_*` are opaque to rustc (tied to the concrete values only
-    // through extern "C" assumes), so the assertions survive to BMC instead of
-    // folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
-    let expected_len: usize = verifier::any!();
-    let expected_cap: usize = verifier::any!();
-    verifier::assume!(expected_len == 0);
-    verifier::assume!(expected_cap == CAP);
+    // `expected_*` go through `opaque` (a volatile read), so the assertions
+    // survive to BMC instead of folding to `true`, without adding assumptions.
+    let expected_len: usize = opaque(0);
+    let expected_cap: usize = opaque(CAP);
 
     verifier::vassert!(v.len() == expected_len);
     verifier::vassert!(v.capacity() == expected_cap);
@@ -798,13 +788,10 @@ fn test_set_len() {
     verifier::assume!(len <= CAP);
     v.set_len(len);
 
-    // `expected_*` are opaque to rustc (tied to the concrete values only
-    // through extern "C" assumes), so the assertions survive to BMC instead of
-    // folding to `true`.
-    let expected_len: usize = verifier::any!();
-    let expected_cap: usize = verifier::any!();
-    verifier::assume!(expected_len == len);
-    verifier::assume!(expected_cap == CAP);
+    // `expected_*` go through `opaque` (a volatile read), so the assertions
+    // survive to BMC instead of folding to `true`, without adding assumptions.
+    let expected_len: usize = opaque(len);
+    let expected_cap: usize = opaque(CAP);
 
     verifier::vassert!(v.len() == expected_len);
     verifier::vassert!(v.capacity() == expected_cap);
@@ -1104,16 +1091,14 @@ fn test_try_from_array_len() {
 
     let v: Result<ArrayVec<[u32; 8]>, _>  = ArrayVec::try_from_array_len([0; 8], len);
 
-    // `expect_ok`/`expected_len` are opaque to rustc (tied to the concrete
-    // values only through extern "C" assumes), so the assertions survive to BMC
-    // instead of folding to `true`. Replaces the old `x * 2 >= x` keep-alive.
-    let expect_ok: bool = verifier::any!();
-    verifier::assume!(expect_ok == (len <= 8));
+    // `expect_ok`/`expected_len` go through `opaque` (a volatile read), so the
+    // assertions survive to BMC instead of folding to `true`, without adding
+    // assumptions.
+    let expect_ok: bool = opaque(len <= 8);
     verifier::vassert!(v.is_ok() == expect_ok);
 
     if len <= 8 {
-        let expected_len: usize = verifier::any!();
-        verifier::assume!(expected_len == len);
+        let expected_len: usize = opaque(len);
         verifier::vassert!(v.unwrap().len() == expected_len);
     }
 }
@@ -1206,4 +1191,11 @@ fn test_try_push() {
         let result: Option<u32> = v.try_push(verifier::any!());
         verifier::vassert!(result.is_some());
     }
+}
+
+// Volatile read: LLVM cannot see through it, so an assertion against the
+// result is not folded away, and no assumption is added.
+#[inline(always)]
+fn opaque<T: Copy>(x: T) -> T {
+    unsafe { core::ptr::read_volatile(&x) }
 }
