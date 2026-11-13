@@ -10,17 +10,10 @@ pub extern "C" fn entrypt() {
     verifier::assume!(x > i32::MIN/2);
     let res = iter_mut(x);
 
-    // `expected` is opaque to rustc: it is tied to `x` only through
-    // verifier::assume!, which is an extern "C" call the front end cannot see
-    // through. Asserting against `x` directly lets LLVM 18 inline `iter_mut`,
-    // correlate the two uses of `x >= 0`, and fold the assertion to `true`
-    // before SeaHorn runs.
-    let expected: i32 = verifier::any!();
-    if x >= 0 {
-        verifier::assume!(expected == x);
-    } else {
-        verifier::assume!(expected == x*2);
-    }
+    // `expected` is hidden from rustc by `opaque` (a volatile read), so LLVM 18
+    // cannot inline `iter_mut`, correlate the two uses of `x >= 0`, and fold
+    // the assertion to `true` before SeaHorn runs. No assumption is added.
+    let expected: i32 = if x >= 0 { opaque(x) } else { opaque(x*2) };
 
     verifier::vassert!(res == expected);
 }
@@ -60,3 +53,9 @@ pub extern "C" fn iter_mut(input: i32) -> i32 {
 //     0
 // }
 
+// Volatile read: LLVM cannot see through it, so an assertion against the
+// result is not folded away, and no assumption is added.
+#[inline(always)]
+fn opaque<T: Copy>(x: T) -> T {
+    unsafe { core::ptr::read_volatile(&x) }
+}
