@@ -4,4 +4,6 @@
 # which the EoP base job can no longer report as unsat.
 c_rust_llvm(custom-vec-raw_vec-aop custom-vec-raw_vec-aop.c)
 
+# Same bound as the base job (bound 10), so every test is checked.
+configure_file(../custom-vec-raw_vec/sea.yaml sea.yaml @ONLY)
 sea_add_unsat_test(custom-vec-raw_vec-aop)
