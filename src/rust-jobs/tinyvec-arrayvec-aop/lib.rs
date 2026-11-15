@@ -35,6 +35,7 @@ pub extern "C" fn entrypt() {
         25 => test_try_push(),
         26 => testfail_drain_panic(),
         27 => test_append(),
+        28 => test_retain_reject_all(),
         _ => (),
     }
 }
@@ -759,6 +760,34 @@ fn test_retain() {
 
     verifier::vassert!(v.len() == len / 2);
     verifier::vassert!(v.capacity() == CAP);
+
+    // Every survivor is even. test_retain_reject_all then shows that
+    // retain(odd) empties any such vector, which is what a second retain on
+    // `v` used to check here. Chaining both symbolic retains (each with a
+    // rotate_left drop guard) behind the assert above made one BMC query
+    // that did not finish in 3600 s.
+    for i in 0..v.len() {
+        verifier::vassert!((v[i] & 1) == 0);
+    }
+}
+
+#[no_mangle]
+#[cfg_attr(kani, kani::proof)]
+#[cfg_attr(kani, kani::unwind(5))]
+fn test_retain_reject_all() {
+    const CAP : usize = 4;
+    let mut v: ArrayVec<[u32; CAP]> = ArrayVec::new();
+
+    // Any all-even vector of length <= CAP: a superset of what the first
+    // retain in test_retain can leave behind.
+    let len: usize = verifier::any!();
+    verifier::assume!(len <= CAP);
+
+    for _ in 0..len {
+        let val: u32 = verifier::any!();
+        verifier::assume!((val & 1) == 0);
+        v.push(val);
+    }
 
     v.retain(|&x| (x & 1) == 1);
 
