@@ -2,9 +2,9 @@ borsh-enum_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpr
 borsh-primitives_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpreting memcpy as noop" kills every path to the asserts (SeaHorn memory model)
 borsh-structs_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpreting memcpy as noop" kills every path to the asserts (SeaHorn memory model)
 cfg-simplify_unsat_test	in blacklist.txt: -O3 folds the only assertion ("no assertion was found")
-custom-vec-raw_vec_unsat_test	18 asserts unreachable: harness bug (unbounded `original` leads to a capacity-overflow panic path); stopgap until the harness is fixed
+custom-vec-raw_vec-aop_unsat_test	18 asserts unreachable: harness bug (unbounded `original` leads to a capacity-overflow panic path); stopgap until the harness is fixed. AoP twin; the EoP base job is a sat test (skipvac)
+custom-vec-zst-alignment-issue-aop_unsat_test	vacuous by design: AoP twin; core's ptr::read alignment trap prunes every path (lib.rs:61/62 unreachable). The EoP base job is a sat test (skipvac)
 custom-vec_test_into_iter_drop_unsat_test	bound too small: the job bound (10) is below the 24-element push/drop loops (backedge range.rs:753, vacuity lib.rs:290); at bound 25, test_deref (2 s at bound 10) did not finish in 10 min under --vac
-custom-vec-zst-alignment-issue_unsat_test	vacuous by design: the job's intended UB-check trap prunes the path; should become a sat test
 sea-vec_test_iter_unsat_test	vacuous: compiler-generated check at lib.rs:0 never reached, not yet investigated
 smallvec-allocation_test_insert_from_slice_unsat_test	in blacklist.txt: sat in plain mode too (unbounded allocation size)
 smallvec-allocation_test_with_capacity_unsat_test	in blacklist.txt: sat in plain mode too (unbounded allocation size)
