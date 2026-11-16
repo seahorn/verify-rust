@@ -12,7 +12,9 @@
 pub extern "C" fn entrypt() {
     let mut reader: &[u8] = b"hello";
     let mut writer: Vec<u8> = vec![];
-    _ = std::io::copy(&mut reader, &mut writer);
+    let n = std::io::copy(&mut reader, &mut writer).unwrap();
+    verifier::vassert!(n == 5);
+    verifier::vassert!(writer.len() == 5);
 }
 
 

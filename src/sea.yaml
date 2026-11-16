@@ -45,4 +45,4 @@ verify_options:
 # time and result stats
   horn-stats: true
 # Promote defined verifier fns
-  ignore-def-verifier-fns: false
+  ignore-define-verifier-fns: false
