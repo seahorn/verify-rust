@@ -282,16 +282,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "custom-vec-zst-alignment-issue-aop-lib"
-version = "0.1.0"
-dependencies = [
- "cfg-if 0.1.10",
- "libc",
- "sea",
- "verifier",
-]
-
-[[package]]
 name = "custom-vec-zst-alignment-issue-lib"
 version = "0.1.0"
 dependencies = [
