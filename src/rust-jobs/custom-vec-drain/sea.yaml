@@ -1,0 +1,4 @@
+verify_options:
+  # test_into_iter_size and test_drain_drop loop 10 times; a smaller bound cuts
+  # the path and every test after test_into_iter_size goes unchecked.
+  bound: 10
