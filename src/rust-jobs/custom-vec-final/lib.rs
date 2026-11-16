@@ -550,7 +550,7 @@ fn test_zst() {
     let slice: &[ZST] = &*v;
     verifier::vassert!(slice.len() == 4);
     verifier::vassert!(v.remove(3) == ZST {});
-    verifier::assume!(v.len == 3);
+    verifier::vassert!(v.len == 3);
 
     // into_iter: front, back, size, drop
     let mut v: CustomVec<ZST> = CustomVec::new();

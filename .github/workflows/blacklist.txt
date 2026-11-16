@@ -1,3 +1,2 @@
-cfg-simplify_unsat_test
 smallvec-allocation_test_insert_from_slice_unsat_test
 smallvec-allocation_test_with_capacity_unsat_test
