@@ -8,9 +8,14 @@ use alloc::string::String;
 pub extern "C" fn entrypt() {
     let x: i32   = verifier::any!();
     let y: i32 = verifier::any!();
-    verifier::assume!(y == 0);
     let res = unwrap_or_else(x, y);
-    verifier::vassert!(res == -1);
+    if y == 0 || x < 0 || y < 0 {
+        // Err path: the closure's default
+        verifier::vassert!(res == -1);
+    } else {
+        // Ok path: a non-negative quotient no larger than the dividend
+        verifier::vassert!(res >= 0 && res <= x);
+    }
 }
 
 fn unwrap_or_else(x: i32, y: i32) -> i32 {
