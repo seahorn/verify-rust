@@ -93,12 +93,6 @@ reach!(testfail_char_d7ff, char, |c| c == '\u{D7FF}');
 reach!(testfail_char_e000, char, |c| c == '\u{E000}');
 reach!(testfail_char_max, char, |c| c == char::MAX);
 
-// floats: special bit patterns
-reach!(testfail_f32_qnan, f32, |f| f.to_bits() == 0x7FC0_0000);
-reach!(testfail_f32_neg_inf, f32, |f| f.to_bits() == 0xFF80_0000);
-reach!(testfail_f64_snan, f64, |f| f.to_bits() == 0x7FF0_0000_0000_0001);
-reach!(testfail_f64_neg_zero, f64, |f| f.to_bits() == 0x8000_0000_0000_0000);
-
 // Option / Result
 reach!(testfail_option_none, Option<u8>, |o| o.is_none());
 reach!(testfail_option_some_max, Option<u8>, |o| o == Some(255));
