@@ -49,6 +49,8 @@ function(sea_discover_tests_impl TARGET BC VERIFY_CMD)
     foreach(TEST_NAME ${FAIL_TEST_NAMES_LIST})
         file(APPEND ${ctest_file} "add_test(${TARGET}_${TEST_NAME}_sat_test
               \"${VERIFY_CMD}\" \"--expect=sat\" \"--entry=${TEST_NAME}\" \"${BC}\" )\n")
+        # same as sea_add_sat_test: a vacuity run reports sat as failure
+        file(APPEND ${ctest_file} "set_tests_properties(${TARGET}_${TEST_NAME}_sat_test PROPERTIES LABELS skipvac)\n")
         message(STATUS "Added test: ${TARGET}_${TEST_NAME}_sat_test")
     endforeach()
   endif()

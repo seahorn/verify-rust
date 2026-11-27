@@ -19,10 +19,6 @@ fn test_string() {
 
     let decoded: String = String::try_from_slice(&encoded).unwrap();
 
-    if decoded != x {
-        verifier::vassert!(false);
-    }
-
     verifier::vassert!(decoded == x);
 }
 

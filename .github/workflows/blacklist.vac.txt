@@ -1,23 +1,17 @@
-copy_stack_buffer_unsat_test
-custom-vec_test_deref_unsat_test
-custom-vec_test_insert_unsat_test
-custom-vec_test_remove_unsat_test
-custom-vec-loop-unroll_unsat_test
-result-unwrap_or_else_unsat_test
-smallvec-allocation-bound2_test_resize2_unsat_test
-smallvec-allocation-bound2_test_resize_with2_unsat_test
-smallvec-bound2_test_resize2_unsat_test
-smallvec-insert-optimization_unsat_test
-tinyvec-arrayvec_test_append_unsat_test
-tinyvec-arrayvec_test_insert_unsat_test
-tinyvec-arrayvec_test_pop_unsat_test
-tinyvec-arrayvec_test_remove_unsat_test
-tinyvec-arrayvec_test_resize_unsat_test
-tinyvec-arrayvec_test_resize_with_unsat_test
-tinyvec-arrayvec_test_retain_unsat_test
-tinyvec-arrayvec_test_splice_panic_unsat_test
-tinyvec-arrayvec_test_split_off_unsat_test
-tinyvec-arrayvec_test_swap_remove_unsat_test
-tinyvec-arrayvec_test_try_append_unsat_test
-tinyvec-arrayvec_test_try_insert_unsat_test
-tinyvec-remove-error_sat_test
+borsh-enum_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpreting memcpy as noop" kills every path to the asserts (SeaHorn memory model)
+borsh-primitives_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpreting memcpy as noop" kills every path to the asserts (SeaHorn memory model)
+borsh-structs_unsat_test	vacuous in plain mode too: "unsupported memcpy ... interpreting memcpy as noop" kills every path to the asserts (SeaHorn memory model)
+cfg-simplify_unsat_test	in blacklist.txt: -O3 folds the only assertion ("no assertion was found"). Drop this entry with the cfg-simplify opaque() fix (assume-rewrites branch), after which the test passes --vac
+custom-vec-raw_vec-aop_unsat_test	18 asserts unreachable: harness bug (unbounded `original` leads to a capacity-overflow panic path); stopgap until the harness is fixed. AoP twin; the EoP base job is a sat test (skipvac)
+custom-vec_test_into_iter_drop_unsat_test	bound too small: the job bound (10) is below the 24-element push/drop loops (backedge range.rs:753, vacuity lib.rs:290); at bound 25, test_deref (2 s at bound 10) did not finish in 10 min under --vac
+mock-test1_unsat_test	vacuous (job registered by the register-jobs branch): the check at lib.rs:11 (the #[seamock] trait expansion) is never reached; the asserts at lib.rs:44-49 are all reached. Not yet investigated
+sea-vec_test_iter_unsat_test	vacuous: compiler-generated check at lib.rs:0 never reached, not yet investigated
+smallvec-allocation_test_insert_from_slice_unsat_test	in blacklist.txt: sat in plain mode too (unbounded allocation size)
+smallvec-allocation_test_with_capacity_unsat_test	in blacklist.txt: sat in plain mode too (unbounded allocation size)
+smallvec-bound8_test_remove_unsat_test	vacuous by design: should-panic test written as unsat; its vassert!(false) after the intended panic is unreachable
+smallvec-bound8_test_swap_remove_unsat_test	vacuous by design: should-panic test written as unsat; its vassert!(false) after the intended panic is unreachable
+smallvec_test_insert_from_slice_unsat_test	resource: no verdict after 1217 s under --vac, likely OOM (plain: 470 s, 6-7.5 GB)
+tinyvec-arrayvec-aop_test_clear_unsat_test	bound too small: job bound 4 is below the len <= 8 push loop (backedge range.rs:753); bound 9 job-wide pushes test_splice past 15 min and 8 GB in plain mode
+tinyvec-arrayvec-aop_test_splice_unsat_test	timeout: >2000 s under --vac (plain 57 s); probably the cost of COI being off in vac mode
+tinyvec-arrayvec_test_retain_unsat_test	timeout: >3600 s under --vac with COI off (plain 1277 s; passes in 460 s with --horn-bmc-coi=true)
+tinyvec-arrayvec_test_splice_unsat_test	resource: passes --vac but took 1809 s of the 2000 s timeout (plain 70 s); likely to time out on a slower CI runner
