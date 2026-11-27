@@ -1,0 +1,63 @@
+name: Vacuity
+
+# The vacuity check (`verify --vac`) also checks that every assertion can be
+# reached, so a proof that is unsat only because its asserts are dead code is
+# reported as a failure. It costs more than the plain run (COI slicing is off),
+# so it runs on a schedule and on demand, not on every push. Plain CI is main.yml.
+on:
+  schedule:
+    - cron: 0 3 1 * *  # monthly, 03:00 UTC on the 1st; nightly: 0 3 * * *
+  workflow_dispatch:   # Actions tab > Vacuity > Run workflow
+    inputs:
+      ref:
+        description: Branch, tag or SHA to check
+        default: dev18
+
+# GitHub runs scheduled workflows only from the default branch (main). The
+# code under test is checked out separately: dev18 on the schedule, or the
+# `ref` input on a manual run.
+
+jobs:
+  vac:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          ref: ${{ inputs.ref || 'dev18' }}
+
+      - name: Get exclude test
+        id: exclude_files
+        run: |
+          blacklist_file=".github/workflows/blacklist.vac.txt"
+          (test -f "$blacklist_file" && echo "exclude_files=($(cut -f 1 "$blacklist_file" | head -c -1 | tr '\n' '|'))" >> "$GITHUB_OUTPUT") || echo "exclude_files= " >> "$GITHUB_OUTPUT"
+
+      - name: Build proofs
+        run: docker build -t verify-rust . --file docker/verify-rust.Dockerfile
+
+      - name: Get number of Cores
+        id: cores
+        run: echo "num_cores=$(nproc --all)" >> "$GITHUB_OUTPUT"
+
+      # sat tests carry the skipvac label: a vacuity run reports sat as failure
+      - name: run seahorn proofs with --vac
+        run: |
+          docker run -t verify-rust /bin/bash -c "
+          rm -Rf build && mkdir build && cd build &&
+          cmake \
+            -DCMAKE_C_COMPILER=clang-18 \
+            -DCMAKE_CXX_COMPILER=clang++-18 \
+            -DSEAHORN_ROOT=/home/usea/seahorn \
+            -DRust_COMPILER=\$(rustup which rustc) \
+            -DRust_CARGO=\$(rustup which cargo) \
+            /home/usea/verify-rust -GNinja &&
+          cmake --build . &&
+          mkdir -p /tmp/verify-rust &&
+          env VERIFY_FLAGS=\"--vac\" \
+            ctest \
+            -j ${{ steps.cores.outputs.num_cores }} \
+            --output-on-failure \
+            --timeout 2000 \
+            --label-exclude=skipvac \
+            -E '${{ steps.exclude_files.outputs.exclude_files }}'
+          "
