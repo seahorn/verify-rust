@@ -106,22 +106,8 @@ impl Arbitrary for char {
     }
 }
 
-// SeaHorn does not model floating point: float values are havoc'd and float
-// comparisons are not supported by the BMC engine. These impls let float
-// fields appear in derived types, but don't assert on float values.
-impl Arbitrary for f32 {
-    #[inline(always)]
-    fn any() -> Self {
-        f32::from_bits(u32::any())
-    }
-}
-
-impl Arbitrary for f64 {
-    #[inline(always)]
-    fn any() -> Self {
-        f64::from_bits(u64::any())
-    }
-}
+// No Arbitrary for f32/f64: SeaHorn does not model floating point, so a
+// float generator would only produce values that cannot be reasoned about.
 
 impl<T: Arbitrary> Arbitrary for Option<T> {
     #[inline(always)]
