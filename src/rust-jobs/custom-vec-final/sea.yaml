@@ -1,0 +1,3 @@
+verify_options:
+  # test_zst pushes and drops up to 7 elements; drop loops need 10 unrollings
+  bound: 10
